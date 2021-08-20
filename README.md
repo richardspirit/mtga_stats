@@ -1,3 +1,3 @@
 # mtga_stats
  
-Database user/password default: root/root/r
+Database user/password default: root/root
