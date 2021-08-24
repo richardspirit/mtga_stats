@@ -121,7 +121,17 @@ func menu() {
 			return
 		}
     case 3:
-        viewrecords()
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("Would you like to narrow your search?(y/n)")
+		deckchoice, _ := reader.ReadString('\n')
+		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
+		if deckchoice == "y" {
+			fmt.Println("Deck Name: ")
+			deckname, _ := reader.ReadString('\n')
+			viewrecords(deckname)
+		} else {
+			viewrecords("n")
+		}
 	default:
 		os.Exit(0)
     }
@@ -205,7 +215,7 @@ func newgame(g Game) error {
 	return nil
 }
 
-func viewrecords() error {
+func viewrecords(DeckName string) error {
     // Open up our database connection.
     db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mgta")
 
@@ -217,25 +227,35 @@ func viewrecords() error {
     // defer the close till after the main function has finished
     // executing
     defer db.Close()
-	
+	if DeckName != "n" {
+		var (deckname string
+			 wins int
+			 loses int)
+		DeckName = strings.TrimSuffix(DeckName, "\r\n")
 	    // Execute the query
-    results, err := db.Query("SELECT deck, wins, loses FROM mgta.record")
-    if err != nil {
-        panic(err.Error()) // proper error handling instead of panic in your app
-    }
+		results := db.QueryRow("SELECT deck, wins, loses FROM mgta.record WHERE deck=?", DeckName)
+		err = results.Scan(&deckname, &wins, &loses)
+		finalrecord := fmt.Sprint(deckname + " Wins: " + strconv.Itoa(wins) + " Loses: " + strconv.Itoa(loses))
+		log.Printf(finalrecord)
+	}else {
+		results, err := db.Query("SELECT deck, wins, loses FROM mgta.record")
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
 	
-    for results.Next() {
-        var records Records
-        // for each row, scan the result into our deck composite object
-        err = results.Scan(&records.Deck, &records.Wins, &records.Loses)
-      //  if err != nil {
-        //    panic(err.Error()) // proper error handling instead of panic in your app
-        //}
-        // and then print out the tag's Name attribute
-		log.SetFlags(0)
-		finalrecord := fmt.Sprint(records.Deck + " Wins: " + strconv.Itoa(records.Wins) + " Loses: " + strconv.Itoa(records.Loses))
-        log.Printf(finalrecord)
+		for results.Next() {
+			var records Records
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&records.Deck, &records.Wins, &records.Loses)
+		//  if err != nil {
+			//    panic(err.Error()) // proper error handling instead of panic in your app
+			//}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			finalrecord := fmt.Sprint(records.Deck + " Wins: " + strconv.Itoa(records.Wins) + " Loses: " + strconv.Itoa(records.Loses))
+			log.Printf(finalrecord)
     }
+	}
 	menu()
 	return nil
 }
