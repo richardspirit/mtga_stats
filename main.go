@@ -46,7 +46,8 @@ func menu() {
 	fmt.Println("1. Enter New Deck")
 	fmt.Println("2. Add New Game")
 	fmt.Println("3. View Deck Records")
-	fmt.Println("4. Quit")
+	fmt.Println("4. View Game Count")
+	fmt.Println("Q. Quit")
 	fmt.Println("")
 	fmt.Println("What do you want to do?")
 	
@@ -132,21 +133,29 @@ func menu() {
 		} else {
 			viewrecords("n")
 		}
+	case 4:
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("Deck:")
+		deckgames, _ := reader.ReadString('\n')
+		deckgames = strings.TrimSuffix(deckgames, "\r\n")
+		gamecount(deckgames)
 	default:
 		os.Exit(0)
     }
 }
 
-func newdeck(d Deck) error {
-
-    // Open up our database connection.
-    db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mgta")
-
+func opendb() (*sql.DB) {
+	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mgta")
     // if there is an error opening the connection, handle it
     if err != nil {
         panic(err.Error())
-    }
+    }	
+	return db
+}
+func newdeck(d Deck) error {
 
+    // Open up our database connection.
+	db := opendb()
     // defer the close till after the main function has finished
     // executing
     defer db.Close()
@@ -179,13 +188,7 @@ func newdeck(d Deck) error {
 func newgame(g Game) error {
 
     // Open up our database connection.
-    db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mgta")
-
-    // if there is an error opening the connection, handle it
-    if err != nil {
-        panic(err.Error())
-    }
-
+	db := opendb()
     // defer the close till after the main function has finished
     // executing
     defer db.Close()
@@ -217,13 +220,7 @@ func newgame(g Game) error {
 
 func viewrecords(DeckName string) error {
     // Open up our database connection.
-    db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mgta")
-
-    // if there is an error opening the connection, handle it
-    if err != nil {
-        panic(err.Error())
-    }
-
+	db := opendb()
     // defer the close till after the main function has finished
     // executing
     defer db.Close()
@@ -234,7 +231,10 @@ func viewrecords(DeckName string) error {
 		DeckName = strings.TrimSuffix(DeckName, "\r\n")
 	    // Execute the query
 		results := db.QueryRow("SELECT deck, wins, loses FROM mgta.record WHERE deck=?", DeckName)
-		err = results.Scan(&deckname, &wins, &loses)
+		err := results.Scan(&deckname, &wins, &loses)
+			if err != nil {
+				panic(err.Error())
+			}		
 		finalrecord := fmt.Sprint(deckname + " Wins: " + strconv.Itoa(wins) + " Loses: " + strconv.Itoa(loses))
 		log.Printf(finalrecord)
 	}else {
@@ -258,4 +258,25 @@ func viewrecords(DeckName string) error {
 	}
 	menu()
 	return nil
+}
+
+func gamecount(d string) {
+	db := opendb()
+    // defer the close till after the main function has finished
+    // executing
+    defer db.Close()
+	
+	var (deckname string
+		 count int)
+	//DeckName = strings.TrimSuffix(DeckName, "\r\n")	
+	results := db.QueryRow("SELECT deck, results AS Count FROM mgta.game_count WHERE deck=?", d)
+	err := results.Scan(&deckname, &count)
+		if err != nil {
+			panic(err.Error())
+		}		
+	finalcount := fmt.Sprint(deckname + " Game Count: " + strconv.Itoa(count))
+	log.Printf(finalcount)
+	
+	menu()
+	//return nil
 }
