@@ -8,6 +8,12 @@ CREATE TABLE `decks` (
   `date_entered` date NOT NULL DEFAULT curdate(),
   `favorite` tinyint(1) NOT NULL DEFAULT 1,
   `max_streak` int(11) DEFAULT NULL,
+  `cur_streak` int(11) DEFAULT NULL,
+  `numcards` int(11) DEFAULT NULL,
+  `numlands` int(11) DEFAULT NULL,
+  `numspells` int(11) DEFAULT NULL,
+  `numcreatures` int(11) DEFAULT NULL,
+  `disable` binary(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -19,6 +25,26 @@ CREATE TABLE `games` (
   `results` binary(1) DEFAULT NULL,
   `cause` varchar(100) DEFAULT NULL,
   `deck` varchar(100) NOT NULL,
+  `opponent` varchar(100) DEFAULT NULL,
+  `level` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`UID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- mgta.decks_deleted definition
+
+CREATE TABLE `decks_deleted` (
+  `name` varchar(100) NOT NULL,
+  `colors` varchar(100) DEFAULT NULL,
+  `date_entered` date NOT NULL DEFAULT curdate(),
+  `favorite` tinyint(1) NOT NULL DEFAULT 1,
+  `max_streak` int(11) DEFAULT 0,
+  `cur_streak` int(11) DEFAULT 0,
+  `numcards` int(11) DEFAULT 0,
+  `numlands` int(11) DEFAULT 0,
+  `numspells` int(11) DEFAULT 0,
+  `numcreatures` int(11) DEFAULT 0,
+  `disable` binary(1) NOT NULL DEFAULT '1',
+  `UID` bigint(20) NOT NULL DEFAULT uuid_short(),
   PRIMARY KEY (`UID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -48,3 +74,18 @@ from
     `mgta`.`games` `g`
 group by
     `g`.`deck`;
+	
+-- mgta.topten source
+
+create or replace
+algorithm = UNDEFINED view `mgta`.`topten` as
+select
+    `r`.`deck` as `deck`,
+    `r`.`wins` as `wins`,
+    `r`.`loses` as `loses`
+from
+    `mgta`.`record` `r`
+order by
+    `r`.`wins` desc,
+    `r`.`loses` desc
+limit 10;
