@@ -386,7 +386,7 @@ func viewdecks(DeckName string, edit int) {
 		} else {
 			fdis = "No"
 		}
-		finalrecord := fmt.Sprint("Name: " + d.Name + "Color/s: " + d.Colors + "Date Entered: " + fdate + "Favorite: " +
+		finalrecord := fmt.Sprint("Name: " + d.Name + "Color: " + d.Colors + "Date Entered: " + fdate + "Favorite: " +
 			ffav + "\n" + "Max Streak: " + fmax + "Current Streak: " + fcur + "\n" + "Number of Cards: " + fcard + "Number of Lands: " +
 			fland + "Number of Spells: " + fspell + "Number of Creatures: " + fcreat + "\n" + "Disabled: " + fdis + " \n")
 		log.SetFlags(0)
@@ -470,16 +470,127 @@ func topten() {
 	menu()
 }
 func editdeck(d string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+	//show current deck attributes
 	viewdecks(d, 1)
+	//create new deck structure variable
+	var deck Deck
+	d = strings.TrimSuffix(d, "\r\n")
+	results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mgta.decks WHERE name=?", d)
+	err := results.Scan(&deck.Name, &deck.Colors, &deck.Date_Entered, &deck.Favorite, &deck.Max_Streak, &deck.Cur_Streak,
+		&deck.Num_Cards, &deck.Num_Lands, &deck.Num_Spells, &deck.Num_Creat, &deck.Disable)
+	if err != nil {
+		panic(err.Error())
+	}
+	//determine which section is to be edited
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Enter section you would like to edit")
 	editchoice, _ := reader.ReadString('\n')
 	fmt.Println("Edit Section: " + editchoice)
-	in := bufio.NewScanner(os.Stdin)
-	in.Scan()
-	echoice := in.Text()
-	switch echoice {
+	editchoice = strings.TrimSuffix(editchoice, "\r\n")
+
+	switch editchoice {
 	case "name":
-		fmt.Println("Name")
+		fmt.Println("Original Name: " + deck.Name)
+		fmt.Print("New Name: ")
+		oname := deck.Name
+		reader := bufio.NewReader(os.Stdin)
+		deck.Name, _ = reader.ReadString('\n')
+		fmt.Println("Update Name: " + deck.Name)
+		deck.Name = strings.TrimSuffix(deck.Name, "\r\n")
+		updatedeck(deck, oname)
+	case "color":
+		fmt.Println("Original Color: " + deck.Colors)
+		fmt.Println("New Colors: ")
+		reader := bufio.NewReader(os.Stdin)
+		deck.Colors, _ = reader.ReadString('\n')
+		fmt.Println("Update Colors: " + deck.Colors)
+		deck.Colors = strings.TrimSuffix(deck.Colors, "\r\n")
+		updatedeck(deck, deck.Name)
+	case "date entered":
+		fmt.Println("Cannot change this field.")
+		editdeck(d)
+	case "favorite":
+		fmt.Println("Is This Deck a Favorite(y/n): ")
+		reader := bufio.NewReader(os.Stdin)
+		sfav, _ := reader.ReadString('\n')
+		sfav = strings.TrimSuffix(sfav, "\r\n")
+		if sfav == "y" {
+			deck.Favorite = 0
+		} else {
+			deck.Favorite = 1
+		}
+		fmt.Println(deck.Favorite)
+		fmt.Println("Update Favorite: " + sfav)
+		updatedeck(deck, deck.Name)
+	case "max streak":
+		fmt.Println("Cannot change this field")
+		editdeck(d)
+	case "current streak":
+		fmt.Println("Cannot change this field")
+		editdeck(d)
+	case "number of cards":
+		fmt.Println("Original Total Number of Cards: " + strconv.Itoa(deck.Num_Cards))
+		fmt.Println("New Total Number of Cards: ")
+		reader := bufio.NewReader(os.Stdin)
+		scards, _ := reader.ReadString('\n')
+		scards = strings.TrimSuffix(scards, "\r\n")
+		deck.Num_Cards, _ = strconv.Atoi(scards)
+		fmt.Println("Update Total Number of Cards: " + scards)
+		updatedeck(deck, deck.Name)
+	case "number of lands":
+		fmt.Println("Original Total Number of Lands: " + strconv.Itoa(deck.Num_Lands))
+		fmt.Println("New Total Number of Lands: ")
+		reader := bufio.NewReader(os.Stdin)
+		slands, _ := reader.ReadString('\n')
+		slands = strings.TrimSuffix(slands, "\r\n")
+		deck.Num_Lands, _ = strconv.Atoi(slands)
+		fmt.Println("Update Total Number of Lands: " + slands)
+		updatedeck(deck, deck.Name)
+	case "number of spells":
+		fmt.Println("Original Total Number of Instant/Sorcery/Enchantment: " + strconv.Itoa(deck.Num_Spells))
+		fmt.Println("New Total Number of Instant/Sorcery/Enchantment: ")
+		reader := bufio.NewReader(os.Stdin)
+		sspells, _ := reader.ReadString('\n')
+		sspells = strings.TrimSuffix(sspells, "\r\n")
+		deck.Num_Spells, _ = strconv.Atoi(sspells)
+		fmt.Println("Update Total Number of Instant/Sorcery/Enchantment: " + sspells)
+		updatedeck(deck, deck.Name)
+	case "number of creatures":
+		fmt.Println("Original Total Number of creatures: " + strconv.Itoa(deck.Num_Creat))
+		fmt.Println("New Total Number of creatures: ")
+		reader := bufio.NewReader(os.Stdin)
+		screat, _ := reader.ReadString('\n')
+		screat = strings.TrimSuffix(screat, "\r\n")
+		deck.Num_Creat, _ = strconv.Atoi(screat)
+		fmt.Println("Update Total Number of creatures: " + screat)
+		updatedeck(deck, deck.Name)
+	case "disabled":
+		fmt.Println("Disabled: ")
 	}
+}
+
+func updatedeck(d Deck, oname string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	defer db.Close()
+
+	// perform a db.Query insert
+	result, err := db.Exec("UPDATE mgta.decks SET name=?, colors=?, favorite=?, numcards=?, numlands=?, numspells=?, numcreatures=?,disable=? WHERE name=?",
+		d.Name, d.Colors, d.Favorite, d.Num_Cards, d.Num_Lands, d.Num_Spells, d.Num_Creat, d.Disable, oname)
+
+	rows, _ := result.RowsAffected()
+
+	fmt.Println(rows)
+	if err != nil {
+		log.Printf("Error %s when finding rows affected", err)
+		panic(err.Error())
+	}
+	log.Println("deck updated ")
+	editdeck(d.Name)
 }
