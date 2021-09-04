@@ -14,10 +14,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func main() {
-	menu()
-}
-
 type Deck struct {
 	Name         string    `json:"name"`
 	Colors       string    `json:"colors"`
@@ -31,32 +27,33 @@ type Deck struct {
 	Num_Spells   int       `json:"num_spells"`
 	Disable      int       `json:"disable"`
 }
-
 type Game struct {
 	Results int    `json:"results"`
 	Cause   string `json:"cause"`
 	Deck    string `json:"Deck"`
 }
-
 type Records struct {
 	Deck  string `json:"deck"`
 	Wins  int    `json:"wins"`
 	Loses int    `json:"loses"`
 }
 
+func main() {
+	menu()
+}
 func menu() {
 	//main menu
 	fmt.Println("MGTA Stats")
 	m := make(map[string]string)
 
 	// Set key/value pairs using typical `name[key] = val`
-	m["k1"] = fmt.Sprintf("%-20s", "Enter New Deck")
-	m["k2"] = fmt.Sprintf("%-20s", "Add New Game")
-	m["k3"] = fmt.Sprintf("%-20s", "View Deck Records")
-	m["k4"] = fmt.Sprintf("%-20s", "View Game Count")
-	m["k5"] = fmt.Sprintf("%-20s", "View Decks")
-	m["k6"] = fmt.Sprintf("%-20s", "Top Ten Decks")
-	m["k7"] = fmt.Sprintf("%-20s", "Edit Deck")
+	m["k1"] = fmt.Sprintf("%-25s", "Enter/Delete New Deck")
+	m["k2"] = fmt.Sprintf("%-25s", "Add New Game")
+	m["k3"] = fmt.Sprintf("%-25s", "View Deck Records")
+	m["k4"] = fmt.Sprintf("%-25s", "View Game Count")
+	m["k5"] = fmt.Sprintf("%-25s", "View Decks")
+	m["k6"] = fmt.Sprintf("%-25s", "Top Ten Decks")
+	m["k7"] = fmt.Sprintf("%-25s", "Edit Deck")
 	m["k10"] = fmt.Sprintf("%20s", "10: Quit")
 
 	// print menu options
@@ -73,64 +70,82 @@ func menu() {
 	switch choice {
 	case 1:
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Deck Name: ")
-		name, _ := reader.ReadString('\n')
-		fmt.Print("Your new deck name is " + name)
-		fmt.Println("Deck Color/s: ")
-		color, _ := reader.ReadString('\n')
-		fmt.Print("Your new deck color/s is/are " + color)
-		fmt.Println("Favorite(y/n): ")
-		favorite, _ := reader.ReadString('\n')
-		name = strings.TrimSuffix(name, "\r\n")
-		color = strings.TrimSuffix(color, "\r\n")
-		fmt.Print("Your new deck " + name + " is a favorite: " + favorite)
-		favorite = strings.TrimSuffix(favorite, "\r\n")
-		favorite_bin := new(int)
-		if favorite == "y" {
-			*favorite_bin = 0
+		fmt.Println("Enter or Delete Deck: ")
+		edchoice, _ := reader.ReadString('\n')
+		edchoice = strings.TrimSuffix(edchoice, "\r\n")
+		if edchoice == "delete" {
+			fmt.Println("Delete Deck: ")
+			ddeck, _ := reader.ReadString('\n')
+			ddeck = strings.TrimSuffix(ddeck, "\r\n")
+			fmt.Println("Delete Deck: " + ddeck)
+			viewdecks(ddeck, 1)
+			fmt.Println("Confirm(y/n): ")
+			confirm, _ := reader.ReadString('\n')
+			confirm = strings.TrimSuffix(confirm, "\r\n")
+			if confirm == "y" {
+				fmt.Println("Confirm Delete")
+				deletedeck(ddeck)
+			}
 		} else {
-			*favorite_bin = 1
-		}
-		fmt.Println("Total Number of cards: ")
-		numcards, _ := reader.ReadString('\n')
-		numcards = strings.TrimSuffix(numcards, "\r\n")
-		icards := new(int)
-		*icards, _ = strconv.Atoi(numcards)
-		fmt.Print("Total number of cards: " + numcards + "\n")
-		fmt.Println("Total number of lands: ")
-		numlands, _ := reader.ReadString('\n')
-		numlands = strings.TrimSuffix(numlands, "\r\n")
-		ilands := new(int)
-		*ilands, _ = strconv.Atoi((numlands))
-		fmt.Print("Total number of lands: " + numlands + "\n")
-		fmt.Println("Total number of instant/sorcery/enchantment: ")
-		numspells, _ := reader.ReadString('\n')
-		numspells = strings.TrimSuffix(numspells, "\r\n")
-		ispells := new(int)
-		*ispells, _ = strconv.Atoi(numspells)
-		fmt.Print("Total number of instant/sorcery/enchantment: " + numspells + "\n")
-		fmt.Println("Total number of creatures: ")
-		numcreatures, _ := reader.ReadString('\n')
-		numcreatures = strings.TrimSuffix(numcreatures, "\r\n")
-		icreatures := new(int)
-		*icreatures, _ = strconv.Atoi(numcreatures)
-		fmt.Print("Total number of creatures: " + numcreatures + "\n")
-		//enter into database
-		//newdeck(name, color, favorite)
-		d := Deck{
-			Name:         name,
-			Colors:       color,
-			Date_Entered: time.Now(),
-			Favorite:     int(*favorite_bin),
-			Num_Cards:    int(*icards),
-			Num_Lands:    int(*ilands),
-			Num_Spells:   int(*ispells),
-			Num_Creat:    int(*icreatures),
-		}
-		err := newdeck(d)
-		if err != nil {
-			log.Printf("Insert deck failed with error %s", err)
-			return
+			fmt.Println("Deck Name: ")
+			name, _ := reader.ReadString('\n')
+			fmt.Print("Your new deck name is " + name)
+			fmt.Println("Deck Color/s: ")
+			color, _ := reader.ReadString('\n')
+			fmt.Print("Your new deck color/s is/are " + color)
+			fmt.Println("Favorite(y/n): ")
+			favorite, _ := reader.ReadString('\n')
+			name = strings.TrimSuffix(name, "\r\n")
+			color = strings.TrimSuffix(color, "\r\n")
+			fmt.Print("Your new deck " + name + " is a favorite: " + favorite)
+			favorite = strings.TrimSuffix(favorite, "\r\n")
+			favorite_bin := new(int)
+			if favorite == "y" {
+				*favorite_bin = 0
+			} else {
+				*favorite_bin = 1
+			}
+			fmt.Println("Total Number of cards: ")
+			numcards, _ := reader.ReadString('\n')
+			numcards = strings.TrimSuffix(numcards, "\r\n")
+			icards := new(int)
+			*icards, _ = strconv.Atoi(numcards)
+			fmt.Print("Total number of cards: " + numcards + "\n")
+			fmt.Println("Total number of lands: ")
+			numlands, _ := reader.ReadString('\n')
+			numlands = strings.TrimSuffix(numlands, "\r\n")
+			ilands := new(int)
+			*ilands, _ = strconv.Atoi((numlands))
+			fmt.Print("Total number of lands: " + numlands + "\n")
+			fmt.Println("Total number of instant/sorcery/enchantment: ")
+			numspells, _ := reader.ReadString('\n')
+			numspells = strings.TrimSuffix(numspells, "\r\n")
+			ispells := new(int)
+			*ispells, _ = strconv.Atoi(numspells)
+			fmt.Print("Total number of instant/sorcery/enchantment: " + numspells + "\n")
+			fmt.Println("Total number of creatures: ")
+			numcreatures, _ := reader.ReadString('\n')
+			numcreatures = strings.TrimSuffix(numcreatures, "\r\n")
+			icreatures := new(int)
+			*icreatures, _ = strconv.Atoi(numcreatures)
+			fmt.Print("Total number of creatures: " + numcreatures + "\n")
+			//enter into database
+			//newdeck(name, color, favorite)
+			d := Deck{
+				Name:         name,
+				Colors:       color,
+				Date_Entered: time.Now(),
+				Favorite:     int(*favorite_bin),
+				Num_Cards:    int(*icards),
+				Num_Lands:    int(*ilands),
+				Num_Spells:   int(*ispells),
+				Num_Creat:    int(*icreatures),
+			}
+			err := newdeck(d)
+			if err != nil {
+				log.Printf("Insert deck failed with error %s", err)
+				return
+			}
 		}
 	case 2:
 		reader := bufio.NewReader(os.Stdin)
@@ -208,7 +223,6 @@ func menu() {
 		menu()
 	}
 }
-
 func opendb() *sql.DB {
 	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mgta?parseTime=true")
 	// if there is an error opening the connection, handle it
@@ -249,7 +263,6 @@ func newdeck(d Deck) error {
 	menu()
 	return nil
 }
-
 func newgame(g Game) error {
 
 	// Open up our database connection.
@@ -282,7 +295,6 @@ func newgame(g Game) error {
 	menu()
 	return nil
 }
-
 func viewrecords(DeckName string) error {
 	// Open up our database connection.
 	db := opendb()
@@ -332,7 +344,6 @@ func viewrecords(DeckName string) error {
 	menu()
 	return nil
 }
-
 func gamecount(d string) {
 	db := opendb()
 	// defer the close till after the main function has finished
@@ -354,7 +365,6 @@ func gamecount(d string) {
 
 	menu()
 }
-
 func viewdecks(DeckName string, edit int) {
 	// Open up our database connection.
 	db := opendb()
@@ -368,7 +378,8 @@ func viewdecks(DeckName string, edit int) {
 		err := results.Scan(&d.Name, &d.Colors, &d.Date_Entered, &d.Favorite, &d.Max_Streak, &d.Cur_Streak,
 			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Disable)
 		if err != nil {
-			panic(err.Error())
+			//panic(err.Error())
+			menu()
 		}
 		d.Name = fmt.Sprintf("%-25s", d.Name)
 		d.Colors = fmt.Sprintf("%-15s", d.Colors)
@@ -380,15 +391,20 @@ func viewdecks(DeckName string, edit int) {
 		fland := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Lands))
 		fspell := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Spells))
 		fcreat := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Creat))
-		fdis := fmt.Sprintf("%-5s", strconv.Itoa(d.Disable))
-		if fdis == "0" {
-			fdis = "Yes"
+		fdis := d.Disable
+		//fdis = strings.TrimSuffix(fdis, "\r\n")
+		//fmt.Println("This is the disable variable: " + fdis)
+		var sdis string
+		if fdis == 0 {
+			sdis = "Yes"
+			fmt.Println("yes")
 		} else {
-			fdis = "No"
+			sdis = "No"
+			fmt.Println("No")
 		}
 		finalrecord := fmt.Sprint("Name: " + d.Name + "Color: " + d.Colors + "Date Entered: " + fdate + "Favorite: " +
 			ffav + "\n" + "Max Streak: " + fmax + "Current Streak: " + fcur + "\n" + "Number of Cards: " + fcard + "Number of Lands: " +
-			fland + "Number of Spells: " + fspell + "Number of Creatures: " + fcreat + "\n" + "Disabled: " + fdis + " \n")
+			fland + "Number of Spells: " + fspell + "Number of Creatures: " + fcreat + "\n" + "Disabled: " + sdis + " \n")
 		log.SetFlags(0)
 		log.Println(finalrecord)
 	} else {
@@ -488,7 +504,7 @@ func editdeck(d string) {
 	}
 	//determine which section is to be edited
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Enter section you would like to edit")
+	fmt.Println("Enter section you would like to edit or finish to return to main menu")
 	editchoice, _ := reader.ReadString('\n')
 	fmt.Println("Edit Section: " + editchoice)
 	editchoice = strings.TrimSuffix(editchoice, "\r\n")
@@ -570,10 +586,26 @@ func editdeck(d string) {
 		fmt.Println("Update Total Number of creatures: " + screat)
 		updatedeck(deck, deck.Name)
 	case "disabled":
-		fmt.Println("Disabled: ")
+		fmt.Println("Do You Want this Deck Disabled(y/n): ")
+		reader := bufio.NewReader(os.Stdin)
+		sdis, _ := reader.ReadString('\n')
+		sdis = strings.TrimSuffix(sdis, "\r\n")
+		if sdis == "y" {
+			deck.Disable = 0
+		} else {
+			deck.Disable = 1
+		}
+		fmt.Println(deck.Disable)
+		fmt.Println("Update Disable: " + sdis)
+		updatedeck(deck, deck.Name)
+	case "finish":
+		menu()
+	default:
+		//Reset Menu for invalid in put
+		fmt.Println("Invalid Selection.")
+		editdeck(d)
 	}
 }
-
 func updatedeck(d Deck, oname string) {
 	// Open up our database connection.
 	db := opendb()
@@ -593,4 +625,56 @@ func updatedeck(d Deck, oname string) {
 	}
 	log.Println("deck updated ")
 	editdeck(d.Name)
+}
+func deletedeck(deck string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	defer db.Close()
+
+	// archive deck record
+	query := "INSERT INTO mgta.decks_deleted(name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable) SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mgta.decks WHERE name=?"
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+	stmt, err := db.PrepareContext(ctx, query)
+	if err != nil {
+		log.Printf("Error %s when preparing SQL statement", err)
+		panic(err.Error())
+	}
+	defer stmt.Close()
+	res, err := stmt.ExecContext(ctx, deck)
+	if err != nil {
+		log.Printf("Error %s when inserting row into deck table", err)
+		panic(err.Error())
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("Error %s when finding rows affected", err)
+		panic(err.Error())
+	}
+	log.Printf("%d deck archived ", rows)
+
+	//delete record from deck table
+	query = "DELETE FROM mgta.decks WHERE name=?"
+	ctx, cancelfunc = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+	stmt, err = db.PrepareContext(ctx, query)
+	if err != nil {
+		fmt.Printf("Error %s when preparing SQL statement", err)
+		panic(err.Error())
+	}
+	defer stmt.Close()
+	res, err = stmt.ExecContext(ctx, deck)
+	if err != nil {
+		log.Printf("Error %s when deleting row from deck table", err)
+		panic(err.Error())
+	}
+	rows, err = res.RowsAffected()
+	if err != nil {
+		log.Printf("Error %s when finding rows affected", err)
+		panic(err.Error())
+	}
+	fmt.Printf("%d deck deleted\n", rows)
+	fmt.Println("")
+	menu()
 }
