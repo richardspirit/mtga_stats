@@ -1,0 +1,9 @@
+Prereqs: 
+Golang
+Mariadb/MySQL
+
+mysql -u root
+
+mariadb> ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
+
+
