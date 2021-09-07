@@ -2,7 +2,7 @@ CREATE DATABASE `mgta` /*!40100 DEFAULT CHARACTER SET latin1 */;
 
 -- mgta.decks definition
 
-CREATE TABLE `decks` (
+CREATE TABLE `mgta`.`decks` (
   `name` varchar(100) NOT NULL,
   `colors` varchar(100) DEFAULT NULL,
   `date_entered` date NOT NULL DEFAULT curdate(),
@@ -19,7 +19,7 @@ CREATE TABLE `decks` (
 
 -- mgta.games definition
 
-CREATE TABLE `games` (
+CREATE TABLE `mgta`.`games` (
   `UID` bigint(20) NOT NULL DEFAULT uuid_short(),
   `Timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `results` binary(1) DEFAULT NULL,
@@ -32,7 +32,7 @@ CREATE TABLE `games` (
 
 -- mgta.decks_deleted definition
 
-CREATE TABLE `decks_deleted` (
+CREATE TABLE `mgta`.`decks_deleted` (
   `name` varchar(100) NOT NULL,
   `colors` varchar(100) DEFAULT NULL,
   `date_entered` date NOT NULL DEFAULT curdate(),

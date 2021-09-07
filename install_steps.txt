@@ -1,0 +1,26 @@
+Prereqs: 
+Golang version go1.17
+--Linux
+sudo apt install golang
+sudo apt-get install git
+go get -u github.com/go-sql-driver/mysql
+
+--Windows/Apple/Source
+https://golang.org/dl/
+
+
+Mariadb 10.6.4
+--Linux
+sudo apt install mariadb-server
+
+--Windows/Apple/Source
+https://downloads.mariadb.org/
+
+--Configure Mariadb on Linux
+Change directory to where database_ddl.sql file is located.
+sudo mysql -u root
+mariadb[(None)]> ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
+mariadb[(None)]> source database_ddl.sql
+
+
+
