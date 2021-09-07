@@ -28,9 +28,11 @@ type Deck struct {
 	Disable      int       `json:"disable"`
 }
 type Game struct {
-	Results int    `json:"results"`
-	Cause   string `json:"cause"`
-	Deck    string `json:"Deck"`
+	Results  int    `json:"results"`
+	Cause    string `json:"cause"`
+	Deck     string `json:"deck"`
+	Opponent string `json:"opponent"`
+	Level    string `json:"level"`
 }
 type Records struct {
 	Deck  string `json:"deck"`
@@ -86,7 +88,7 @@ func menu() {
 				fmt.Println("Confirm Delete")
 				deletedeck(ddeck)
 			}
-		} else {
+		} else if edchoice == "enter" {
 			fmt.Println("Deck Name: ")
 			name, _ := reader.ReadString('\n')
 			fmt.Print("Your new deck name is " + name)
@@ -146,6 +148,10 @@ func menu() {
 				log.Printf("Insert deck failed with error %s", err)
 				return
 			}
+		} else {
+			fmt.Println("Invalid Choice")
+			fmt.Println("")
+			menu()
 		}
 	case 2:
 		reader := bufio.NewReader(os.Stdin)
@@ -155,12 +161,27 @@ func menu() {
 		fmt.Print("You " + results + " this game.\n")
 		fmt.Println("Why do you think you " + results + " this game?")
 		cause, _ := reader.ReadString('\n')
-		fmt.Print("Cause: " + cause)
+		cause = strings.TrimSuffix(cause, "\r\n")
+		fmt.Println("Cause: " + cause)
 		fmt.Println("What deck were you using?")
 		deck, _ := reader.ReadString('\n')
-		fmt.Print("You " + results + " your game using " + deck)
-		cause = strings.TrimSuffix(cause, "\r\n")
 		deck = strings.TrimSuffix(deck, "\r\n")
+		//validate deck name
+		validatedeck(deck)
+		fmt.Println("You " + results + " your game using " + deck)
+		fmt.Println("Who was your opponent?")
+		opp, _ := reader.ReadString('\n')
+		opp = strings.TrimSuffix(opp, "\r\n")
+		fmt.Println("Your opponent was: " + opp)
+		fmt.Println("What Level Was the Game?(Bronze, Silver, Gold, Platinum, Diamond, and Mythic)")
+		lev, _ := reader.ReadString('\n')
+		lev = strings.TrimSuffix(lev, "\r\n")
+		fmt.Println("What Tier Was the Game?(1-4)")
+		tier, _ := reader.ReadString('\n')
+		tier = strings.TrimSuffix(tier, "\r\n")
+		fmt.Println("Your Game was Level " + lev + " and Tier " + tier)
+		cmblvl := lev + "-" + tier
+
 		results_bin := new(int)
 		if results == "won" {
 			*results_bin = 0
@@ -169,9 +190,11 @@ func menu() {
 		}
 		//enter into database
 		g := Game{
-			Results: int(*results_bin),
-			Cause:   cause,
-			Deck:    deck,
+			Results:  int(*results_bin),
+			Cause:    cause,
+			Deck:     deck,
+			Opponent: opp,
+			Level:    cmblvl,
 		}
 		err := newgame(g)
 		if err != nil {
@@ -220,6 +243,7 @@ func menu() {
 	default:
 		//Reset Menu for invalid in put
 		fmt.Println("Invalid Selection.")
+		fmt.Println("")
 		menu()
 	}
 }
@@ -260,6 +284,7 @@ func newdeck(d Deck) error {
 		panic(err.Error())
 	}
 	log.Printf("%d deck created ", rows)
+	fmt.Println("")
 	menu()
 	return nil
 }
@@ -272,7 +297,7 @@ func newgame(g Game) error {
 	defer db.Close()
 
 	// perform a db.Query insert
-	query := "INSERT INTO mgta.games(results, cause, deck) VALUES (?, ?, ?)"
+	query := "INSERT INTO mgta.games(results, cause, deck, opponent, level) VALUES (?, ?, ?,?,?)"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	stmt, err := db.PrepareContext(ctx, query)
@@ -281,7 +306,7 @@ func newgame(g Game) error {
 		panic(err.Error())
 	}
 	defer stmt.Close()
-	res, err := stmt.ExecContext(ctx, g.Results, g.Cause, g.Deck)
+	res, err := stmt.ExecContext(ctx, g.Results, g.Cause, g.Deck, g.Opponent, g.Level)
 	if err != nil {
 		log.Printf("Error %s when inserting row into deck table", err)
 		panic(err.Error())
@@ -292,6 +317,7 @@ func newgame(g Game) error {
 		panic(err.Error())
 	}
 	log.Printf("%d row added ", rows)
+	fmt.Println("")
 	menu()
 	return nil
 }
@@ -319,6 +345,7 @@ func viewrecords(DeckName string) error {
 		floses := fmt.Sprintf("%-5s", "Loses: "+strconv.Itoa(loses))
 		finalrecord := fmt.Sprint(deckname + fwins + floses)
 		log.Println(finalrecord)
+		fmt.Println("")
 	} else {
 		results, err := db.Query("SELECT deck, wins, loses FROM mgta.record ORDER BY wins desc, loses desc")
 		if err != nil {
@@ -341,6 +368,7 @@ func viewrecords(DeckName string) error {
 			log.Println(finalrecord)
 		}
 	}
+	fmt.Println("")
 	menu()
 	return nil
 }
@@ -362,7 +390,7 @@ func gamecount(d string) {
 	}
 	finalcount := fmt.Sprint(deckname + " Game Count: " + strconv.Itoa(count))
 	log.Println(finalcount)
-
+	fmt.Println("")
 	menu()
 }
 func viewdecks(DeckName string, edit int) {
@@ -374,6 +402,8 @@ func viewdecks(DeckName string, edit int) {
 	if DeckName != "n" {
 		var d Deck
 		DeckName = strings.TrimSuffix(DeckName, "\r\n")
+		//validate deck name
+		validatedeck(DeckName)
 		results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mgta.decks WHERE name=?", DeckName)
 		err := results.Scan(&d.Name, &d.Colors, &d.Date_Entered, &d.Favorite, &d.Max_Streak, &d.Cur_Streak,
 			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Disable)
@@ -444,6 +474,7 @@ func viewdecks(DeckName string, edit int) {
 		}
 	}
 	if edit == 0 {
+		fmt.Println("")
 		menu()
 	}
 }
@@ -483,6 +514,7 @@ func topten() {
 		finalrecord := fmt.Sprint(name + " Wins: " + fwins + " Loses: " + floses)
 		log.Println(finalrecord)
 	}
+	fmt.Println("")
 	menu()
 }
 func editdeck(d string) {
@@ -677,4 +709,21 @@ func deletedeck(deck string) {
 	fmt.Printf("%d deck deleted\n", rows)
 	fmt.Println("")
 	menu()
+}
+func validatedeck(deck string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+
+	// Verify Database Name
+	var deckname string
+	results := db.QueryRow("SELECT name FROM mgta.decks WHERE name=?", deck)
+	err := results.Scan(&deckname)
+	if err != nil {
+		fmt.Println("Deck Does Not Exist")
+		fmt.Println("")
+		menu()
+	}
 }
