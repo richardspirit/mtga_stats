@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -75,7 +76,9 @@ func menu() {
 		fmt.Println("Enter or Delete Deck: ")
 		edchoice, _ := reader.ReadString('\n')
 		edchoice = strings.TrimSuffix(edchoice, "\r\n")
-		if edchoice == "delete" {
+		//validate user input
+		edchoice = validateuserinput(edchoice, "choice")
+		if edchoice == "delete" || edchoice == "Delete" {
 			fmt.Println("Delete Deck: ")
 			ddeck, _ := reader.ReadString('\n')
 			ddeck = strings.TrimSuffix(ddeck, "\r\n")
@@ -84,23 +87,60 @@ func menu() {
 			fmt.Println("Confirm(y/n): ")
 			confirm, _ := reader.ReadString('\n')
 			confirm = strings.TrimSuffix(confirm, "\r\n")
-			if confirm == "y" {
+			//validate confirmation entry
+			confirm = validateuserinput(confirm, "confirm")
+
+			if confirm == "y" || confirm == "Y" {
 				fmt.Println("Confirm Delete")
 				deletedeck(ddeck)
+			} else if confirm == "n" || confirm == "N" {
+				menu()
 			}
-		} else if edchoice == "enter" {
+		} else if edchoice == "enter" || edchoice == "Enter" {
 			fmt.Println("Deck Name: ")
 			name, _ := reader.ReadString('\n')
-			fmt.Print("Your new deck name is " + name)
-			fmt.Println("Deck Color/s: ")
-			color, _ := reader.ReadString('\n')
-			fmt.Print("Your new deck color/s is/are " + color)
+			name = strings.TrimSuffix(name, "\r\n")
+			fmt.Println("Your new deck name is " + name)
+			fmt.Println("Is this deck a multi color deck?(y/n)")
+			multi, _ := reader.ReadString('\n')
+			multi = strings.TrimSuffix(multi, "\r\n")
+			//validate user input
+			multi = validateuserinput(multi, "confirm")
+			var color string
+			if multi == "y" {
+				fmt.Println("How many colors?")
+				num_col, _ := reader.ReadString('\n')
+				num_col = strings.TrimSuffix(num_col, "\r\n")
+				fmt.Println("You deck has " + num_col + " of colors")
+				fmt.Println("what is your first color?(Black|White|Blue|Red|Green)")
+				cols, _ := reader.ReadString('\n')
+				cols = strings.TrimSuffix(cols, "\r\n")
+				//validate user input
+				cols = validateuserinput(cols, "colors")
+				count := 1
+				snum, _ := strconv.Atoi(num_col)
+				for count != snum {
+					count++
+					fmt.Println("Next Color(Black|White|Blue|Red|Green): ")
+					ncol, _ := reader.ReadString('\n')
+					ncol = strings.TrimSuffix(ncol, "\r\n")
+					validateuserinput(ncol, "colors")
+					cols = cols + "," + ncol
+				}
+				color = cols
+			} else if multi == "n" {
+				fmt.Println("What color is your deck?(Black|White|Blue|Red|Green)")
+				color, _ = reader.ReadString('\n')
+				color = strings.TrimSuffix(color, "\r\n")
+				validateuserinput(color, "colors")
+			}
 			fmt.Println("Favorite(y/n): ")
 			favorite, _ := reader.ReadString('\n')
-			name = strings.TrimSuffix(name, "\r\n")
-			color = strings.TrimSuffix(color, "\r\n")
-			fmt.Print("Your new deck " + name + " is a favorite: " + favorite)
 			favorite = strings.TrimSuffix(favorite, "\r\n")
+			//validate user input
+			validateuserinput(favorite, "confirm")
+			fmt.Println("Your new deck " + name + " is a favorite: " + favorite)
+			//convert string to int equivilant
 			favorite_bin := new(int)
 			if favorite == "y" {
 				*favorite_bin = 0
@@ -148,16 +188,14 @@ func menu() {
 				log.Printf("Insert deck failed with error %s", err)
 				return
 			}
-		} else {
-			fmt.Println("Invalid Choice")
-			fmt.Println("")
-			menu()
 		}
 	case 2:
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Results(won/lost): ")
 		results, _ := reader.ReadString('\n')
 		results = strings.TrimSuffix(results, "\r\n")
+		//validate results input
+		results = validateuserinput(results, "results")
 		fmt.Print("You " + results + " this game.\n")
 		fmt.Println("Why do you think you " + results + " this game?")
 		cause, _ := reader.ReadString('\n')
@@ -167,7 +205,7 @@ func menu() {
 		deck, _ := reader.ReadString('\n')
 		deck = strings.TrimSuffix(deck, "\r\n")
 		//validate deck name
-		validatedeck(deck)
+		deck = validatedeck(deck)
 		fmt.Println("You " + results + " your game using " + deck)
 		fmt.Println("Who was your opponent?")
 		opp, _ := reader.ReadString('\n')
@@ -176,12 +214,16 @@ func menu() {
 		fmt.Println("What Level Was the Game?(Bronze, Silver, Gold, Platinum, Diamond, and Mythic)")
 		lev, _ := reader.ReadString('\n')
 		lev = strings.TrimSuffix(lev, "\r\n")
+		//validate level input
+		lev = validateuserinput(lev, "level")
 		fmt.Println("What Tier Was the Game?(1-4)")
 		tier, _ := reader.ReadString('\n')
 		tier = strings.TrimSuffix(tier, "\r\n")
+		//validate tier input
+		tier = validateuserinput(tier, "tier")
 		fmt.Println("Your Game was Level " + lev + " and Tier " + tier)
 		cmblvl := lev + "-" + tier
-
+		//convert string to int
 		results_bin := new(int)
 		if results == "won" {
 			*results_bin = 0
@@ -206,6 +248,7 @@ func menu() {
 		fmt.Println("Would you like to narrow your search?(y/n)")
 		deckchoice, _ := reader.ReadString('\n')
 		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
+		validateuserinput(deckchoice, "confirm")
 		if deckchoice == "y" {
 			fmt.Println("Deck Name: ")
 			deckname, _ := reader.ReadString('\n')
@@ -334,11 +377,19 @@ func viewrecords(DeckName string) error {
 			loses    int
 		)
 		DeckName = strings.TrimSuffix(DeckName, "\r\n")
+		DeckName = validatedeck(DeckName)
+
 		// Execute the query
 		results := db.QueryRow("SELECT deck, wins, loses FROM mgta.record WHERE deck=?", DeckName)
 		err := results.Scan(&deckname, &wins, &loses)
 		if err != nil {
-			panic(err.Error())
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				menu()
+			} else {
+				panic(err.Error())
+			}
 		}
 		deckname = fmt.Sprintf("%-25s", deckname)
 		fwins := fmt.Sprintf("%-10s", "Wins: "+strconv.Itoa(wins))
@@ -382,9 +433,12 @@ func gamecount(d string) {
 		deckname string
 		count    int
 	)
-	//DeckName = strings.TrimSuffix(DeckName, "\r\n")
+	//validate deck name
+	d = validatedeck(d)
+
 	results := db.QueryRow("SELECT deck, results AS Count FROM mgta.game_count WHERE deck=?", d)
 	err := results.Scan(&deckname, &count)
+	fmt.Println("testing: " + deckname)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -393,7 +447,7 @@ func gamecount(d string) {
 	fmt.Println("")
 	menu()
 }
-func viewdecks(DeckName string, edit int) {
+func viewdecks(DeckName string, edit int) (ret string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
@@ -403,7 +457,7 @@ func viewdecks(DeckName string, edit int) {
 		var d Deck
 		DeckName = strings.TrimSuffix(DeckName, "\r\n")
 		//validate deck name
-		validatedeck(DeckName)
+		DeckName = validatedeck(DeckName)
 		results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mgta.decks WHERE name=?", DeckName)
 		err := results.Scan(&d.Name, &d.Colors, &d.Date_Entered, &d.Favorite, &d.Max_Streak, &d.Cur_Streak,
 			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Disable)
@@ -422,21 +476,21 @@ func viewdecks(DeckName string, edit int) {
 		fspell := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Spells))
 		fcreat := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Creat))
 		fdis := d.Disable
-		//fdis = strings.TrimSuffix(fdis, "\r\n")
-		//fmt.Println("This is the disable variable: " + fdis)
+
 		var sdis string
 		if fdis == 0 {
 			sdis = "Yes"
-			fmt.Println("yes")
+			//fmt.Println("yes")
 		} else {
 			sdis = "No"
-			fmt.Println("No")
+			//fmt.Println("No")
 		}
 		finalrecord := fmt.Sprint("Name: " + d.Name + "Color: " + d.Colors + "Date Entered: " + fdate + "Favorite: " +
 			ffav + "\n" + "Max Streak: " + fmax + "Current Streak: " + fcur + "\n" + "Number of Cards: " + fcard + "Number of Lands: " +
 			fland + "Number of Spells: " + fspell + "Number of Creatures: " + fcreat + "\n" + "Disabled: " + sdis + " \n")
 		log.SetFlags(0)
 		log.Println(finalrecord)
+		ret = d.Name
 	} else {
 		results, err := db.Query("SELECT name, colors, date_entered, favorite, max_streak FROM mgta.decks ORDER BY favorite")
 
@@ -477,6 +531,7 @@ func viewdecks(DeckName string, edit int) {
 		fmt.Println("")
 		menu()
 	}
+	return
 }
 func topten() {
 	// Open up our database connection.
@@ -524,7 +579,7 @@ func editdeck(d string) {
 	// executing
 	defer db.Close()
 	//show current deck attributes
-	viewdecks(d, 1)
+	d = viewdecks(d, 1)
 	//create new deck structure variable
 	var deck Deck
 	d = strings.TrimSuffix(d, "\r\n")
@@ -710,20 +765,81 @@ func deletedeck(deck string) {
 	fmt.Println("")
 	menu()
 }
-func validatedeck(deck string) {
+func validatedeck(deck string) (deckname string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
 	// executing
 	defer db.Close()
-
+	reader := bufio.NewReader(os.Stdin)
 	// Verify Database Name
-	var deckname string
+	//var deckname string
 	results := db.QueryRow("SELECT name FROM mgta.decks WHERE name=?", deck)
 	err := results.Scan(&deckname)
-	if err != nil {
+	for err != nil {
 		fmt.Println("Deck Does Not Exist")
-		fmt.Println("")
-		menu()
+		fmt.Println("Deck Name: ")
+		deck, _ := reader.ReadString('\n')
+		deck = strings.TrimSuffix(deck, "\r\n")
+		results := db.QueryRow("SELECT name FROM mgta.decks WHERE name=?", deck)
+		err = results.Scan(&deckname)
 	}
+	return
+}
+func validateuserinput(s string, u string) (ret string) {
+	reader := bufio.NewReader(os.Stdin)
+	switch u {
+	case "level":
+		re, _ := regexp.Compile(`Bronze|Silver|Gold|Platinum|Diamond|Mythic`)
+		for !re.MatchString(s) {
+			fmt.Println("Invalid Entry. Try Again")
+			fmt.Println("What Level Was the Game?(Bronze, Silver, Gold, Platinum, Diamond, and Mythic)")
+			s, _ = reader.ReadString('\n')
+			s = strings.TrimSuffix(s, "\r\n")
+		}
+	case "tier":
+		re, _ := regexp.Compile(`[1-4]`)
+		for !re.MatchString(s) {
+			fmt.Println("Invalid Entry. Try Again")
+			fmt.Println("What Tier Was the Game?(1-4)")
+			s, _ = reader.ReadString('\n')
+			s = strings.TrimSuffix(s, "\r\n")
+		}
+	case "results":
+		re, _ := regexp.Compile(`won|lost`)
+		for !re.MatchString(s) {
+			fmt.Println("Invalid Entry. Try Again")
+			fmt.Println("Results(won/lost): ")
+			s, _ = reader.ReadString('\n')
+			s = strings.TrimSuffix(s, "\r\n")
+		}
+	case "deck":
+		s = validatedeck(s)
+	case "choice":
+		re, _ := regexp.Compile(`enter|Enter|delete|Delete`)
+		for !re.MatchString(s) || len(s) > 6 {
+			fmt.Println("Invalid Entry. Try Again")
+			fmt.Println("Enter or Delete Deck: ")
+			s, _ = reader.ReadString('\n')
+			s = strings.TrimSuffix(s, "\r\n")
+		}
+	case "confirm":
+		re, _ := regexp.Compile(`[yn]`)
+		for !re.MatchString(s) || len(s) > 1 {
+			fmt.Println("Invalid Entry. Try Again")
+			fmt.Println("Confirm(y/n): ")
+			s, _ = reader.ReadString('\n')
+			s = strings.TrimSuffix(s, "\r\n")
+		}
+	case "colors":
+		re, _ := regexp.Compile(`Black|White|Blue|Red|Green|Colorless`)
+		for !re.MatchString(s) {
+			fmt.Println("Invalid Entry. Try Again")
+			fmt.Println("What Color?(Black|White|Blue|Red|Green)")
+			s, _ = reader.ReadString('\n')
+			s = strings.TrimSuffix(s, "\r\n")
+		}
+	}
+	ret = s
+	return
 }
