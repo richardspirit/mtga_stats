@@ -46,8 +46,9 @@ func main() {
 }
 func menu() {
 	//main menu
-	fmt.Println("MGTA Stats")
+	fmt.Println("mtga Stats")
 	m := make(map[string]string)
+	reader := bufio.NewReader(os.Stdin)
 
 	// Set key/value pairs using typical `name[key] = val`
 	m["k1"] = fmt.Sprintf("%-25s", "Enter/Delete New Deck")
@@ -57,13 +58,14 @@ func menu() {
 	m["k5"] = fmt.Sprintf("%-25s", "View Decks")
 	m["k6"] = fmt.Sprintf("%-25s", "Top Ten Decks")
 	m["k7"] = fmt.Sprintf("%-25s", "Edit Deck")
+	m["k8"] = fmt.Sprintf("%-25s", "Win/Lose Percent")
 	m["k10"] = fmt.Sprintf("%20s", "10: Quit")
 
 	// print menu options
 	fmt.Println("1:", m["k1"]+"2:", m["k2"])
 	fmt.Println("3:", m["k3"]+"4:", m["k4"])
 	fmt.Println("5:", m["k5"]+"6:", m["k6"])
-	fmt.Println("7:", m["k7"])
+	fmt.Println("7:", m["k7"]+"8:", m["k8"])
 	fmt.Println(m["k10"])
 
 	in := bufio.NewScanner(os.Stdin)
@@ -72,7 +74,7 @@ func menu() {
 
 	switch choice {
 	case 1:
-		reader := bufio.NewReader(os.Stdin)
+		//reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Enter or Delete Deck: ")
 		edchoice, _ := reader.ReadString('\n')
 		edchoice = strings.TrimSuffix(edchoice, "\r\n")
@@ -190,7 +192,7 @@ func menu() {
 			}
 		}
 	case 2:
-		reader := bufio.NewReader(os.Stdin)
+		//reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Results(won/lost): ")
 		results, _ := reader.ReadString('\n')
 		results = strings.TrimSuffix(results, "\r\n")
@@ -244,7 +246,7 @@ func menu() {
 			return
 		}
 	case 3:
-		reader := bufio.NewReader(os.Stdin)
+		//reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Would you like to narrow your search?(y/n)")
 		deckchoice, _ := reader.ReadString('\n')
 		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
@@ -257,13 +259,13 @@ func menu() {
 			viewrecords("n")
 		}
 	case 4:
-		reader := bufio.NewReader(os.Stdin)
+		//reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Deck:")
 		deckgames, _ := reader.ReadString('\n')
 		deckgames = strings.TrimSuffix(deckgames, "\r\n")
 		gamecount(deckgames)
 	case 5:
-		reader := bufio.NewReader(os.Stdin)
+		//reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Would you like to see a specific deck details?(y/n)")
 		deckchoice, _ := reader.ReadString('\n')
 		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
@@ -277,10 +279,20 @@ func menu() {
 	case 6:
 		topten()
 	case 7:
-		reader := bufio.NewReader(os.Stdin)
+		//reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Deck: ")
 		deckchoice, _ := reader.ReadString('\n')
 		editdeck(deckchoice)
+	case 8:
+		fmt.Println("Deck: ")
+		deck, _ := reader.ReadString('\n')
+		deck = strings.TrimSuffix(deck, "\r\n")
+		deck = validatedeck(deck)
+		fmt.Println("Wins or Loses?")
+		wlpct, _ := reader.ReadString('\n')
+		wlpct = strings.TrimSuffix(wlpct, "\r\n")
+		wlpct = validateuserinput(wlpct, "percent")
+		pctvals(wlpct, deck)
 	case 10:
 		os.Exit(0)
 	default:
@@ -291,7 +303,7 @@ func menu() {
 	}
 }
 func opendb() *sql.DB {
-	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mgta?parseTime=true")
+	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mtga?parseTime=true")
 	// if there is an error opening the connection, handle it
 	if err != nil {
 		panic(err.Error())
@@ -307,7 +319,7 @@ func newdeck(d Deck) error {
 	defer db.Close()
 
 	// perform a db.Query insert
-	query := "INSERT INTO mgta.decks(name, colors, favorite, numcards, numlands, numspells, numcreatures) VALUES (?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO mtga.decks(name, colors, favorite, numcards, numlands, numspells, numcreatures) VALUES (?, ?, ?, ?, ?, ?, ?)"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	stmt, err := db.PrepareContext(ctx, query)
@@ -340,7 +352,7 @@ func newgame(g Game) error {
 	defer db.Close()
 
 	// perform a db.Query insert
-	query := "INSERT INTO mgta.games(results, cause, deck, opponent, level) VALUES (?, ?, ?,?,?)"
+	query := "INSERT INTO mtga.games(results, cause, deck, opponent, level) VALUES (?, ?, ?,?,?)"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	stmt, err := db.PrepareContext(ctx, query)
@@ -380,7 +392,7 @@ func viewrecords(DeckName string) error {
 		DeckName = validatedeck(DeckName)
 
 		// Execute the query
-		results := db.QueryRow("SELECT deck, wins, loses FROM mgta.record WHERE deck=?", DeckName)
+		results := db.QueryRow("SELECT deck, wins, loses FROM mtga.record WHERE deck=?", DeckName)
 		err := results.Scan(&deckname, &wins, &loses)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
@@ -398,7 +410,7 @@ func viewrecords(DeckName string) error {
 		log.Println(finalrecord)
 		fmt.Println("")
 	} else {
-		results, err := db.Query("SELECT deck, wins, loses FROM mgta.record ORDER BY wins desc, loses desc")
+		results, err := db.Query("SELECT deck, wins, loses FROM mtga.record ORDER BY wins desc, loses desc")
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
@@ -436,7 +448,7 @@ func gamecount(d string) {
 	//validate deck name
 	d = validatedeck(d)
 
-	results := db.QueryRow("SELECT deck, results AS Count FROM mgta.game_count WHERE deck=?", d)
+	results := db.QueryRow("SELECT deck, results AS Count FROM mtga.game_count WHERE deck=?", d)
 	err := results.Scan(&deckname, &count)
 	fmt.Println("testing: " + deckname)
 	if err != nil {
@@ -458,7 +470,7 @@ func viewdecks(DeckName string, edit int) (ret string) {
 		DeckName = strings.TrimSuffix(DeckName, "\r\n")
 		//validate deck name
 		DeckName = validatedeck(DeckName)
-		results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mgta.decks WHERE name=?", DeckName)
+		results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mtga.decks WHERE name=?", DeckName)
 		err := results.Scan(&d.Name, &d.Colors, &d.Date_Entered, &d.Favorite, &d.Max_Streak, &d.Cur_Streak,
 			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Disable)
 		if err != nil {
@@ -492,7 +504,7 @@ func viewdecks(DeckName string, edit int) (ret string) {
 		log.Println(finalrecord)
 		ret = d.Name
 	} else {
-		results, err := db.Query("SELECT name, colors, date_entered, favorite, max_streak FROM mgta.decks ORDER BY favorite")
+		results, err := db.Query("SELECT name, colors, date_entered, favorite, max_streak FROM mtga.decks ORDER BY favorite")
 
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
@@ -540,7 +552,7 @@ func topten() {
 	// executing
 	defer db.Close()
 
-	results, err := db.Query("SELECT deck, wins, loses FROM mgta.topten")
+	results, err := db.Query("SELECT deck, wins, loses FROM mtga.topten")
 
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
@@ -583,7 +595,7 @@ func editdeck(d string) {
 	//create new deck structure variable
 	var deck Deck
 	d = strings.TrimSuffix(d, "\r\n")
-	results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mgta.decks WHERE name=?", d)
+	results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mtga.decks WHERE name=?", d)
 	err := results.Scan(&deck.Name, &deck.Colors, &deck.Date_Entered, &deck.Favorite, &deck.Max_Streak, &deck.Cur_Streak,
 		&deck.Num_Cards, &deck.Num_Lands, &deck.Num_Spells, &deck.Num_Creat, &deck.Disable)
 	if err != nil {
@@ -700,7 +712,7 @@ func updatedeck(d Deck, oname string) {
 	defer db.Close()
 
 	// perform a db.Query insert
-	result, err := db.Exec("UPDATE mgta.decks SET name=?, colors=?, favorite=?, numcards=?, numlands=?, numspells=?, numcreatures=?,disable=? WHERE name=?",
+	result, err := db.Exec("UPDATE mtga.decks SET name=?, colors=?, favorite=?, numcards=?, numlands=?, numspells=?, numcreatures=?,disable=? WHERE name=?",
 		d.Name, d.Colors, d.Favorite, d.Num_Cards, d.Num_Lands, d.Num_Spells, d.Num_Creat, d.Disable, oname)
 
 	rows, _ := result.RowsAffected()
@@ -720,7 +732,7 @@ func deletedeck(deck string) {
 	defer db.Close()
 
 	// archive deck record
-	query := "INSERT INTO mgta.decks_deleted(name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable) SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mgta.decks WHERE name=?"
+	query := "INSERT INTO mtga.decks_deleted(name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable) SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mtga.decks WHERE name=?"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	stmt, err := db.PrepareContext(ctx, query)
@@ -742,7 +754,7 @@ func deletedeck(deck string) {
 	log.Printf("%d deck archived ", rows)
 
 	//delete record from deck table
-	query = "DELETE FROM mgta.decks WHERE name=?"
+	query = "DELETE FROM mtga.decks WHERE name=?"
 	ctx, cancelfunc = context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	stmt, err = db.PrepareContext(ctx, query)
@@ -774,14 +786,14 @@ func validatedeck(deck string) (deckname string) {
 	reader := bufio.NewReader(os.Stdin)
 	// Verify Database Name
 	//var deckname string
-	results := db.QueryRow("SELECT name FROM mgta.decks WHERE name=?", deck)
+	results := db.QueryRow("SELECT name FROM mtga.decks WHERE name=?", deck)
 	err := results.Scan(&deckname)
 	for err != nil {
 		fmt.Println("Deck Does Not Exist")
 		fmt.Println("Deck Name: ")
 		deck, _ := reader.ReadString('\n')
 		deck = strings.TrimSuffix(deck, "\r\n")
-		results := db.QueryRow("SELECT name FROM mgta.decks WHERE name=?", deck)
+		results := db.QueryRow("SELECT name FROM mtga.decks WHERE name=?", deck)
 		err = results.Scan(&deckname)
 	}
 	return
@@ -839,7 +851,76 @@ func validateuserinput(s string, u string) (ret string) {
 			s, _ = reader.ReadString('\n')
 			s = strings.TrimSuffix(s, "\r\n")
 		}
+	case "percent":
+		re, _ := regexp.Compile(`wins|loses`)
+		for !re.MatchString(s) {
+			fmt.Println("Invalid Entry")
+			fmt.Println("Wins or Loses Percentages?")
+			s, _ = reader.ReadString('\n')
+			s = strings.TrimSuffix(s, "\r\n")
+		}
 	}
 	ret = s
 	return
+}
+func pctvals(s string, d string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+	var (
+		deckname string
+		pct      float32
+		count    int
+		games    int
+	)
+
+	if s == "wins" {
+		results := db.QueryRow("SELECT deck,win_pct,win_count,games FROM mtga.win_percentage WHERE deck =?", d)
+		err := results.Scan(&deckname, &pct, &count, &games)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				menu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		fpct := fmt.Sprintf("%f", pct)
+		fpct = fpct[2:4]
+		tpct := fpct[0:1]
+		println("Print test two: " + tpct)
+		if pct == 1 {
+			fpct = "100"
+			println("test one: " + fpct)
+		}
+		println("testing: " + fpct)
+		finalprint := fmt.Sprint(deckname + "   Win Percentage: " + fpct + "%    Number of Wins: " + strconv.Itoa(count) +
+			"    Number of Games: " + strconv.Itoa(games))
+		log.Println(finalprint)
+		fmt.Println("")
+		menu()
+	} else if s == "loses" {
+		results := db.QueryRow("SELECT deck,lose_pct,lose_count,games FROM mtga.lose_percentage WHERE deck =?", d)
+		err := results.Scan(&deckname, &pct, &count, &games)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				menu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		fpct := fmt.Sprintf("%f", pct)
+		fpct = fpct[2:4]
+		finalprint := fmt.Sprint(deckname + "   Lose Percentage: " + fpct + "%    Number of Loses: " + strconv.Itoa(count) +
+			"    Number of Games: " + strconv.Itoa(games))
+		log.Println(finalprint)
+		fmt.Println("")
+		menu()
+	}
+	menu()
 }
