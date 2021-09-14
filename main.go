@@ -29,11 +29,13 @@ type Deck struct {
 	Disable      int       `json:"disable"`
 }
 type Game struct {
-	Results  int    `json:"results"`
-	Cause    string `json:"cause"`
-	Deck     string `json:"deck"`
-	Opponent string `json:"opponent"`
-	Level    string `json:"level"`
+	Results       int    `json:"results"`
+	Cause         string `json:"cause"`
+	Deck          string `json:"deck"`
+	Opponent      string `json:"opponent"`
+	Level         string `json:"level"`
+	CurrentStreak int    `json:"currentstreak"`
+	MaxStreak     int    `json:"maxstreak"`
 }
 type Records struct {
 	Deck  string `json:"deck"`
@@ -52,21 +54,22 @@ func menu() {
 
 	// Set key/value pairs using typical `name[key] = val`
 	m["k1"] = fmt.Sprintf("%-25s", "Enter/Delete New Deck")
-	m["k2"] = fmt.Sprintf("%-25s", "Add New Game")
+	m["k2"] = fmt.Sprintf("%0s", "Add New Game")
 	m["k3"] = fmt.Sprintf("%-25s", "View Deck Records")
-	m["k4"] = fmt.Sprintf("%-25s", "View Game Count")
+	m["k4"] = fmt.Sprintf("%0s", "View Game Count")
 	m["k5"] = fmt.Sprintf("%-25s", "View Decks")
-	m["k6"] = fmt.Sprintf("%-25s", "Top Ten Decks")
+	m["k6"] = fmt.Sprintf("%0s", "Top Ten Decks")
 	m["k7"] = fmt.Sprintf("%-25s", "Edit Deck")
-	m["k8"] = fmt.Sprintf("%-25s", "Win/Lose Percent")
-	m["k10"] = fmt.Sprintf("%20s", "10: Quit")
+	m["k8"] = fmt.Sprintf("%0s", "Win/Lose Percent")
+	m["k9"] = fmt.Sprintf("%-25s", "Analysis")
+	m["k10"] = fmt.Sprintf("%0s", "Quit")
 
 	// print menu options
-	fmt.Println("1:", m["k1"]+"2:", m["k2"])
-	fmt.Println("3:", m["k3"]+"4:", m["k4"])
-	fmt.Println("5:", m["k5"]+"6:", m["k6"])
-	fmt.Println("7:", m["k7"]+"8:", m["k8"])
-	fmt.Println(m["k10"])
+	fmt.Println("1:", m["k1"]+" 2:", m["k2"])
+	fmt.Println("3:", m["k3"]+" 4:", m["k4"])
+	fmt.Println("5:", m["k5"]+" 6:", m["k6"])
+	fmt.Println("7:", m["k7"]+" 8:", m["k8"])
+	fmt.Println("9:", m["k9"]+"10:", m["k10"])
 
 	in := bufio.NewScanner(os.Stdin)
 	in.Scan()
@@ -232,6 +235,7 @@ func menu() {
 		} else {
 			*results_bin = 1
 		}
+
 		//enter into database
 		g := Game{
 			Results:  int(*results_bin),
@@ -293,6 +297,8 @@ func menu() {
 		wlpct = strings.TrimSuffix(wlpct, "\r\n")
 		wlpct = validateuserinput(wlpct, "percent")
 		pctvals(wlpct, deck)
+	case 9:
+		anal_menu()
 	case 10:
 		os.Exit(0)
 	default:
@@ -372,6 +378,8 @@ func newgame(g Game) error {
 		panic(err.Error())
 	}
 	log.Printf("%d row added ", rows)
+	//determin max and current streak
+	streaks(g.Deck)
 	fmt.Println("")
 	menu()
 	return nil
@@ -474,8 +482,8 @@ func viewdecks(DeckName string, edit int) (ret string) {
 		err := results.Scan(&d.Name, &d.Colors, &d.Date_Entered, &d.Favorite, &d.Max_Streak, &d.Cur_Streak,
 			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Disable)
 		if err != nil {
-			//panic(err.Error())
-			menu()
+			panic(err.Error())
+			//menu()
 		}
 		d.Name = fmt.Sprintf("%-25s", d.Name)
 		d.Colors = fmt.Sprintf("%-15s", d.Colors)
@@ -923,4 +931,62 @@ func pctvals(s string, d string) {
 		menu()
 	}
 	menu()
+}
+func streaks(d string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+
+	var (
+		max    int
+		cur    int
+		streak int
+	)
+	println("Deck Name: " + d)
+	results, err := db.Query("SELECT deck, results FROM mtga.games WHERE deck=?", d)
+
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+	for results.Next() {
+		var (
+			name   string
+			result int
+		)
+
+		// for each row, scan the result into our deck composite object
+		err = results.Scan(&name, &result)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		//track and store streak values
+		if result == 0 {
+			if streak == 0 {
+				cur++
+				if cur > max {
+					max = cur
+				}
+			} else if streak == 1 {
+				streak = 0
+				cur++
+			}
+		} else if result == 1 {
+			streak = 1
+			cur = 0
+		}
+	}
+
+	// perform a db.Query insert
+	upresult, err := db.Exec("UPDATE mtga.decks SET max_streak=?, cur_streak=? where name=?", max, cur, d)
+
+	rows, _ := upresult.RowsAffected()
+
+	fmt.Println(rows)
+	if err != nil {
+		log.Printf("Error %s when finding rows affected", err)
+		panic(err.Error())
+	}
+	log.Println("deck updated ")
 }
