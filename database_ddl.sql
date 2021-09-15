@@ -134,3 +134,35 @@ join (
     group by
         `mtga`.`games`.`deck`) `g` on
     (`gc`.`deck` = `g`.`deck`));
+
+-- mtga.loses_by_day source
+
+create or replace
+algorithm = UNDEFINED view `mtga`.`loses_by_day` as
+select
+    `g`.`deck` as `deck`,
+    dayname(`g`.`Timestamp`) as `day_of_week`,
+    count(`g`.`results`) as `lose_count`
+from
+    `mtga`.`games` `g`
+where
+    `g`.`results` = 1
+group by
+    `g`.`deck`,
+    dayname(`g`.`Timestamp`);
+	
+-- mtga.wins_by_day source
+
+create or replace
+algorithm = UNDEFINED view `mtga`.`wins_by_day` as
+select
+    `g`.`deck` as `deck`,
+    dayname(`g`.`Timestamp`) as `day_of_week`,
+    count(`g`.`results`) as `win_count`
+from
+    `mtga`.`games` `g`
+where
+    `g`.`results` = 0
+group by
+    `g`.`deck`,
+    dayname(`g`.`Timestamp`);

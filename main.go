@@ -983,10 +983,10 @@ func streaks(d string) {
 
 	rows, _ := upresult.RowsAffected()
 
-	fmt.Println(rows)
+	//fmt.Println(rows)
 	if err != nil {
 		log.Printf("Error %s when finding rows affected", err)
 		panic(err.Error())
 	}
-	log.Println("deck updated ")
+	log.Println("deck updated ", rows)
 }
