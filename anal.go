@@ -43,6 +43,10 @@ func anal_menu() {
 	switch choice {
 	case 1:
 		gamebyday()
+	case 10:
+		main()
+	case 11:
+		os.Exit(0)
 	}
 }
 func gamebyday() {
@@ -103,6 +107,10 @@ func gamebyday() {
 		} else if deckchoice == "n" {
 			analday("n", "lose")
 		}
+	case 10:
+		main()
+	case 11:
+		os.Exit(0)
 	}
 }
 func analday(d string, win_lose string) {
