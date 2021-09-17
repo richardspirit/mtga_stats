@@ -90,7 +90,19 @@ func gamebyday() {
 		}
 	case 2:
 		println("Worst Day")
-		//analday()
+		println("Would you like to specify a deck?(y/n)")
+		in.Scan()
+		deckchoice := in.Text()
+		deckchoice = validateuserinput(deckchoice, "confirm")
+		if deckchoice == "y" {
+			println("Deck: ")
+			in.Scan()
+			deck := in.Text()
+			deck = validatedeck(deck)
+			analday(deck, "lose")
+		} else if deckchoice == "n" {
+			analday("n", "lose")
+		}
 	}
 }
 func analday(d string, win_lose string) {
@@ -103,11 +115,12 @@ func analday(d string, win_lose string) {
 	var (
 		deckname string
 		max_win  int
+		max_lose int
 		day      string
 	)
 
 	if d != "n" && win_lose == "win" {
-		results := db.QueryRow("SELECT deck, MAX(win_count) as max_win, day_of_week FROM mtga.wins_by_day WHERE deck=? GROUP BY deck", d)
+		results := db.QueryRow("SELECT deck, MAX(win_count) as max_win, day_of_week FROM mtga.wins_by_day WHERE deck=? GROUP BY deck, day_of_week order by win_count desc limit 1", d)
 		err := results.Scan(&deckname, &max_win, &day)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
@@ -123,7 +136,7 @@ func analday(d string, win_lose string) {
 		println("")
 		gamebyday()
 	} else if d == "n" && win_lose == "win" {
-		results, err := db.Query("SELECT deck, MAX(win_count) as max_win, day_of_week FROM mtga.wins_by_day GROUP BY deck")
+		results, err := db.Query("SELECT deck, win_count, day_of_week  FROM mtga.most_wbd")
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
@@ -139,7 +152,39 @@ func analday(d string, win_lose string) {
 			finalstring := fmt.Sprint("The day of most wins for " + deckname + " is " + day + " with " + strconv.Itoa(max_win) + " wins")
 			fmt.Println(finalstring)
 		}
+		gamebyday()
 	} else if d != "n" && win_lose == "lose" {
-		fmt.Println("lose")
+		results := db.QueryRow("SELECT deck, MAX(lose_count) as max_loses, day_of_week FROM mtga.loses_by_day WHERE deck=? group by deck, day_of_week order by lose_count desc limit 1", d)
+		err := results.Scan(&deckname, &max_lose, &day)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				gamebyday()
+			} else {
+				panic(err.Error())
+			}
+		}
+		finalstring := fmt.Sprint("The day of most loses for " + deckname + " is " + day + " with " + strconv.Itoa(max_lose) + " loses")
+		fmt.Println(finalstring)
+		println("")
+		gamebyday()
+	} else if d == "n" && win_lose == "lose" {
+		results, err := db.Query("SELECT deck, lose_count, day_of_week FROM mtga.most_lbd")
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deckname, &max_lose, &day)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			finalstring := fmt.Sprint("The day of most loses for " + deckname + " is " + day + " with " + strconv.Itoa(max_lose) + " loses")
+			fmt.Println(finalstring)
+		}
+		gamebyday()
 	}
 }

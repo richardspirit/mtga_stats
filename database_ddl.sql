@@ -166,3 +166,47 @@ where
 group by
     `g`.`deck`,
     dayname(`g`.`Timestamp`);
+
+-- mtga.most_wbd source
+
+create or replace
+algorithm = UNDEFINED view `mtga`.`most_wbd` as with added_row_number as (
+select
+    `wins_by_day`.`deck` as `deck`,
+    `wins_by_day`.`day_of_week` as `day_of_week`,
+    `wins_by_day`.`win_count` as `win_count`,
+    row_number() over ( partition by `wins_by_day`.`deck`
+order by
+    `wins_by_day`.`win_count` desc) as `row_number`
+from
+    `mtga`.`wins_by_day`
+)select
+    `added_row_number`.`deck` as `deck`,
+    `added_row_number`.`day_of_week` as `day_of_week`,
+    `added_row_number`.`win_count` as `win_count`
+from
+    `added_row_number`
+where
+    `added_row_number`.`row_number` = 1;
+	
+-- mtga.most_lbd source
+
+create or replace
+algorithm = UNDEFINED view `mtga`.`most_lbd` as with added_row_number as (
+select
+    `loses_by_day`.`deck` as `deck`,
+    `loses_by_day`.`day_of_week` as `day_of_week`,
+    `loses_by_day`.`lose_count` as `lose_count`,
+    row_number() over ( partition by `loses_by_day`.`deck`
+order by
+    `loses_by_day`.`lose_count` desc) as `row_number`
+from
+    `mtga`.`loses_by_day`
+)select
+    `added_row_number`.`deck` as `deck`,
+    `added_row_number`.`day_of_week` as `day_of_week`,
+    `added_row_number`.`lose_count` as `lose_count`
+from
+    `added_row_number`
+where
+    `added_row_number`.`row_number` = 1;
