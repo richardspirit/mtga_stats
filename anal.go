@@ -61,16 +61,19 @@ func gamebyday() {
 	m["k7"] = fmt.Sprintf("%0s", "Friday")
 	m["k8"] = fmt.Sprintf("%0s", "Saturday")
 	m["k9"] = fmt.Sprintf("%0s", "Sunday")
-	m["k10"] = fmt.Sprintf("%-24s", "Return to Main Menu")
-	m["k11"] = fmt.Sprintf("%0s", "Quit")
+	m["k10"] = fmt.Sprintf("%0s", "Return to Previous Menu")
+	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
+	m["k12"] = fmt.Sprintf("%0s", "Quit")
 
 	// print menu options
-	fmt.Println(" 1:", m["k1"]+"5:", m["k5"])
-	fmt.Println(" 2:", m["k2"]+"6:", m["k6"])
-	fmt.Println(" 3:", m["k3"]+"7:", m["k7"])
-	fmt.Println(" 4:", m["k4"]+"8:", m["k8"])
-	fmt.Println("              "+" 9:", m["k9"])
-	fmt.Println("10:", m["k10"]+"11:", m["k11"])
+	fmt.Println(" 1:", m["k1"]+" 5:", m["k5"])
+	fmt.Println(" 2:", m["k2"]+" 6:", m["k6"])
+	fmt.Println(" 3:", m["k3"]+" 7:", m["k7"])
+	fmt.Println(" 4:", m["k4"]+" 8:", m["k8"])
+	fmt.Println("             9:", m["k9"])
+	fmt.Println("10:", m["k10"])
+	fmt.Println("11:", m["k11"])
+	fmt.Println("12:", m["k12"])
 
 	in := bufio.NewScanner(os.Stdin)
 	in.Scan()
@@ -107,10 +110,92 @@ func gamebyday() {
 		} else if deckchoice == "n" {
 			analday("n", "lose")
 		}
+	case 3:
+		println("Monday")
+		analdmenu("Monday")
+	case 4:
+		println("Tuesday")
+		analdmenu("Tuesday")
+	case 5:
+		println("Wednesday")
+		analdmenu("Wednesday")
+	case 6:
+		println("Thursday")
+		analdmenu("Thursday")
+	case 7:
+		println("Friday")
+		analdmenu("Friday")
+	case 8:
+		println("Saturday")
+		analdmenu("Saturday")
+	case 9:
+		println("Sunday")
+		analdmenu("Sunday")
 	case 10:
-		main()
+		anal_menu()
 	case 11:
+		main()
+	case 12:
 		os.Exit(0)
+	default:
+		gamebyday()
+	}
+}
+func analdmenu(day string) {
+	m := make(map[string]string)
+	fmt.Println("Choose Options Below")
+	m["k1"] = fmt.Sprintf("%-30s", "Best Deck for "+day)
+	m["k2"] = fmt.Sprintf("%-30s", "Worst Deck for "+day)
+	m["k3"] = fmt.Sprintf("%-30s", "Wins for a deck on "+day)
+	m["k4"] = fmt.Sprintf("%-25s", "Loses for a deck on "+day)
+	m["k5"] = fmt.Sprintf("%0s", "Wins for all decks on "+day)
+	m["k6"] = fmt.Sprintf("%0s", "Loses for all decks on "+day)
+	m["k10"] = fmt.Sprintf("%0s", "Return to Previous Menu")
+	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
+	m["k12"] = fmt.Sprintf("%0s", "Quit")
+
+	// print menu options
+	fmt.Println(" 1:", m["k1"]+"4:", m["k4"])
+	fmt.Println(" 2:", m["k2"]+"5:", m["k5"])
+	fmt.Println(" 3:", m["k3"]+"6:", m["k6"])
+	println("")
+	fmt.Println("10:", m["k10"])
+	fmt.Println("11:", m["k11"])
+	fmt.Println("12:", m["k12"])
+
+	in := bufio.NewScanner(os.Stdin)
+	in.Scan()
+	choice, _ := strconv.Atoi(in.Text())
+
+	switch choice {
+	case 1:
+		analweekday("best", day, "")
+	case 2:
+		analweekday("worst", day, "")
+	case 3:
+		println("Deck:")
+		in.Scan()
+		deck := in.Text()
+		deck = validatedeck(deck)
+		analweekday(deck, day, "w")
+	case 4:
+		println("Deck:")
+		in.Scan()
+		deck := in.Text()
+		deck = validatedeck(deck)
+		analweekday(deck, day, "l")
+	case 5:
+		analweekday("all", day, "w")
+	case 6:
+		analweekday("all", day, "l")
+	case 10:
+		gamebyday()
+	case 11:
+		main()
+	case 12:
+		os.Exit(0)
+	default:
+		analdmenu(day)
 	}
 }
 func analday(d string, win_lose string) {
@@ -194,5 +279,133 @@ func analday(d string, win_lose string) {
 			fmt.Println(finalstring)
 		}
 		gamebyday()
+	}
+}
+func analweekday(d string, day string, wl string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+
+	var (
+		deckname string
+		wl_count int
+	)
+
+	if d == "best" {
+		results := db.QueryRow("SELECT deck, win_count FROM mtga.wins_by_day WHERE day_of_week =? ORDER BY win_count DESC LIMIT 1", day)
+		err := results.Scan(&deckname, &wl_count)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analdmenu(day)
+			} else {
+				panic(err.Error())
+			}
+		}
+		finalstring := fmt.Sprint("The the best deck for  " + day + " is " + deckname + " with " + strconv.Itoa(wl_count) + " wins")
+		fmt.Println(finalstring)
+		println("")
+		analdmenu(day)
+	} else if d == "worst" {
+		results := db.QueryRow("select deck, lose_count from mtga.loses_by_day where day_of_week =? order by lose_count desc limit 1", day)
+		err := results.Scan(&deckname, &wl_count)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analdmenu(day)
+			} else {
+				panic(err.Error())
+			}
+		}
+		finalstring := fmt.Sprint("The the worst deck for  " + day + " is " + deckname + " with " + strconv.Itoa(wl_count) + " loses")
+		fmt.Println(finalstring)
+		println("")
+		analdmenu(day)
+	} else if wl == "w" && d != "all" {
+		results := db.QueryRow("SELECT win_count FROM mtga.wins_by_day WHERE day_of_week =? AND deck =?", day, d)
+		err := results.Scan(&wl_count)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Wins Recored for this Deck and this Day")
+				fmt.Println("")
+				analdmenu(day)
+			} else {
+				panic(err.Error())
+			}
+		}
+		finalstring := fmt.Sprint("Wins on " + day + " for " + d + " with " + strconv.Itoa(wl_count) + " wins")
+		fmt.Println(finalstring)
+		println("")
+		analdmenu(day)
+	} else if wl == "l" && d != "all" {
+		results := db.QueryRow("SELECT lose_count FROM mtga.loses_by_day WHERE day_of_week =? AND deck =?", day, d)
+		err := results.Scan(&wl_count)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Loses Recored for this Deck and this Day")
+				fmt.Println("")
+				analdmenu(day)
+			} else {
+				panic(err.Error())
+			}
+		}
+		finalstring := fmt.Sprint("Loses on " + day + " for " + d + " with " + strconv.Itoa(wl_count) + " loses")
+		fmt.Println(finalstring)
+		println("")
+		analdmenu(day)
+	} else if wl == "w" && d == "all" {
+		results, err := db.Query("SELECT deck, win_count FROM mtga.wins_by_day WHERE day_of_week =?", day)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Wins Recored for this Day")
+				fmt.Println("")
+				analdmenu(day)
+			} else {
+				panic(err.Error())
+			}
+		}
+
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deckname, &wl_count)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			finalstring := fmt.Sprint("Wins for " + deckname + " on " + day + " with " + strconv.Itoa(wl_count) + " wins")
+			fmt.Println(finalstring)
+		}
+		println("")
+		analdmenu(day)
+	} else if wl == "l" && d == "all" {
+		results, err := db.Query("SELECT deck, lose_count FROM mtga.loses_by_day WHERE day_of_week =?", day)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Loses Recored for this Day")
+				fmt.Println("")
+				analdmenu(day)
+			} else {
+				panic(err.Error())
+			}
+		}
+
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deckname, &wl_count)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			finalstring := fmt.Sprint("Loses for " + deckname + " on " + day + " with " + strconv.Itoa(wl_count) + " loses")
+			fmt.Println(finalstring)
+		}
+		println("")
+		analdmenu(day)
 	}
 }
