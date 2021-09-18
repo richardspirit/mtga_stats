@@ -43,10 +43,196 @@ func anal_menu() {
 	switch choice {
 	case 1:
 		gamebyday()
+	case 2:
+		analreasonmenu()
 	case 10:
 		main()
 	case 11:
 		os.Exit(0)
+	}
+}
+func analdmenu(day string) {
+	m := make(map[string]string)
+	fmt.Println("Choose Options Below")
+	m["k1"] = fmt.Sprintf("%-30s", "Best Deck for "+day)
+	m["k2"] = fmt.Sprintf("%-30s", "Worst Deck for "+day)
+	m["k3"] = fmt.Sprintf("%-30s", "Wins for a deck on "+day)
+	m["k4"] = fmt.Sprintf("%-25s", "Loses for a deck on "+day)
+	m["k5"] = fmt.Sprintf("%0s", "Wins for all decks on "+day)
+	m["k6"] = fmt.Sprintf("%0s", "Loses for all decks on "+day)
+	m["k10"] = fmt.Sprintf("%0s", "Return to Previous Menu")
+	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
+	m["k12"] = fmt.Sprintf("%0s", "Quit")
+
+	// print menu options
+	fmt.Println(" 1:", m["k1"]+"4:", m["k4"])
+	fmt.Println(" 2:", m["k2"]+"5:", m["k5"])
+	fmt.Println(" 3:", m["k3"]+"6:", m["k6"])
+	println("")
+	fmt.Println("10:", m["k10"])
+	fmt.Println("11:", m["k11"])
+	fmt.Println("12:", m["k12"])
+
+	in := bufio.NewScanner(os.Stdin)
+	in.Scan()
+	choice, _ := strconv.Atoi(in.Text())
+
+	switch choice {
+	case 1:
+		analweekday("best", day, "")
+	case 2:
+		analweekday("worst", day, "")
+	case 3:
+		println("Deck:")
+		in.Scan()
+		deck := in.Text()
+		deck = validatedeck(deck)
+		analweekday(deck, day, "w")
+	case 4:
+		println("Deck:")
+		in.Scan()
+		deck := in.Text()
+		deck = validatedeck(deck)
+		analweekday(deck, day, "l")
+	case 5:
+		analweekday("all", day, "w")
+	case 6:
+		analweekday("all", day, "l")
+	case 10:
+		gamebyday()
+	case 11:
+		main()
+	case 12:
+		os.Exit(0)
+	default:
+		analdmenu(day)
+	}
+}
+func analreasonmenu() {
+	//analysis main menu
+	fmt.Println("Reason")
+	m := make(map[string]string)
+
+	// Set key/value pairs using typical `name[key] = val`
+	m["k1"] = fmt.Sprintf("%-50s", "Win Reasons Related to Mana")
+	m["k2"] = fmt.Sprintf("%-50s", "Win Reasons Related to Creatures")
+	m["k3"] = fmt.Sprintf("%-50s", "Win Reasons Related to Opponent Deck Type")
+	m["k4"] = fmt.Sprintf("%-50s", "Win Reasons Related to Specific Deck")
+	m["k5"] = fmt.Sprintf("%0s", "Lost Reasons Related to Mana")
+	m["k6"] = fmt.Sprintf("%0s", "Lost Reasons Related to Creatures")
+	m["k7"] = fmt.Sprintf("%0s", "Lost Reasons Related to Opponent Deck Type")
+	m["k8"] = fmt.Sprintf("%24s", "Lost Reasons Related to Specific Deck")
+	m["k9"] = fmt.Sprintf("%0s", "Customized Reasons")
+	m["k10"] = fmt.Sprintf("%-50s", "Return to Previous Menu")
+	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
+	m["k12"] = fmt.Sprintf("%0s", "Quit")
+
+	// print menu options
+	fmt.Println(" 1:", m["k1"]+"5:", m["k5"])
+	fmt.Println(" 2:", m["k2"]+"6:", m["k6"])
+	fmt.Println(" 3:", m["k3"]+"7:", m["k7"])
+	fmt.Println(" 4:", m["k4"]+"8:", m["k8"])
+	fmt.Println("                            "+" 9:", m["k9"])
+	fmt.Println("10:", m["k10"]+"11:", m["k11"])
+	fmt.Println("12:", m["k12"])
+
+	in := bufio.NewScanner(os.Stdin)
+	in.Scan()
+	choice, _ := strconv.Atoi(in.Text())
+
+	switch choice {
+	case 1:
+		println("Do you want to specify a deck?(y/n)")
+		in.Scan()
+		deck := in.Text()
+		deck = validateuserinput(deck, "confirm")
+		if deck == "y" {
+			println("Deck: ")
+			in.Scan()
+			deck = in.Text()
+			deck = validatedeck(deck)
+		}
+		analreason("mana", "w", deck)
+	case 2:
+		println("Do you want to specify a deck?(y/n)")
+		in.Scan()
+		deck := in.Text()
+		deck = validateuserinput(deck, "confirm")
+		if deck == "y" {
+			println("Deck: ")
+			in.Scan()
+			deck = in.Text()
+			deck = validatedeck(deck)
+		}
+		analreason("creature", "w", deck)
+	case 3:
+		println("Unfinished")
+		analreasonmenu()
+	case 4:
+		println("Deck:")
+		in.Scan()
+		deck := in.Text()
+		deck = validatedeck(deck)
+		analreason("", "w", deck)
+	case 5:
+		println("Do you want to specify a deck?(y/n)")
+		in.Scan()
+		deck := in.Text()
+		deck = validateuserinput(deck, "confirm")
+		if deck == "y" {
+			println("Deck: ")
+			in.Scan()
+			deck = in.Text()
+			deck = validatedeck(deck)
+		}
+		analreason("mana", "l", deck)
+	case 6:
+		println("Do you want to specify a deck?(y/n)")
+		in.Scan()
+		deck := in.Text()
+		deck = validateuserinput(deck, "confirm")
+		if deck == "y" {
+			println("Deck: ")
+			in.Scan()
+			deck = in.Text()
+			deck = validatedeck(deck)
+		}
+		analreason("creature", "l", deck)
+	case 7:
+		println("Unfinished")
+		analreasonmenu()
+	case 8:
+		println("Deck:")
+		in.Scan()
+		deck := in.Text()
+		deck = validatedeck(deck)
+		analreason("", "l", deck)
+	case 9:
+		println("Do you want to specify a deck?(y/n)")
+		in.Scan()
+		deck := in.Text()
+		deck = validateuserinput(deck, "confirm")
+		if deck == "y" {
+			println("Deck: ")
+			in.Scan()
+			deck = in.Text()
+			deck = validatedeck(deck)
+		}
+		println("Custom Filter Keyword:")
+		in.Scan()
+		custom := in.Text()
+		println("Wins, loses or all?(w/l/a")
+		in.Scan()
+		wl := in.Text()
+		analreason(custom, wl, deck)
+	case 10:
+		anal_menu()
+	case 11:
+		main()
+	case 12:
+		os.Exit(0)
+	default:
+		analreasonmenu()
 	}
 }
 func gamebyday() {
@@ -139,63 +325,6 @@ func gamebyday() {
 		os.Exit(0)
 	default:
 		gamebyday()
-	}
-}
-func analdmenu(day string) {
-	m := make(map[string]string)
-	fmt.Println("Choose Options Below")
-	m["k1"] = fmt.Sprintf("%-30s", "Best Deck for "+day)
-	m["k2"] = fmt.Sprintf("%-30s", "Worst Deck for "+day)
-	m["k3"] = fmt.Sprintf("%-30s", "Wins for a deck on "+day)
-	m["k4"] = fmt.Sprintf("%-25s", "Loses for a deck on "+day)
-	m["k5"] = fmt.Sprintf("%0s", "Wins for all decks on "+day)
-	m["k6"] = fmt.Sprintf("%0s", "Loses for all decks on "+day)
-	m["k10"] = fmt.Sprintf("%0s", "Return to Previous Menu")
-	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
-	m["k12"] = fmt.Sprintf("%0s", "Quit")
-
-	// print menu options
-	fmt.Println(" 1:", m["k1"]+"4:", m["k4"])
-	fmt.Println(" 2:", m["k2"]+"5:", m["k5"])
-	fmt.Println(" 3:", m["k3"]+"6:", m["k6"])
-	println("")
-	fmt.Println("10:", m["k10"])
-	fmt.Println("11:", m["k11"])
-	fmt.Println("12:", m["k12"])
-
-	in := bufio.NewScanner(os.Stdin)
-	in.Scan()
-	choice, _ := strconv.Atoi(in.Text())
-
-	switch choice {
-	case 1:
-		analweekday("best", day, "")
-	case 2:
-		analweekday("worst", day, "")
-	case 3:
-		println("Deck:")
-		in.Scan()
-		deck := in.Text()
-		deck = validatedeck(deck)
-		analweekday(deck, day, "w")
-	case 4:
-		println("Deck:")
-		in.Scan()
-		deck := in.Text()
-		deck = validatedeck(deck)
-		analweekday(deck, day, "l")
-	case 5:
-		analweekday("all", day, "w")
-	case 6:
-		analweekday("all", day, "l")
-	case 10:
-		gamebyday()
-	case 11:
-		main()
-	case 12:
-		os.Exit(0)
-	default:
-		analdmenu(day)
 	}
 }
 func analday(d string, win_lose string) {
@@ -407,5 +536,127 @@ func analweekday(d string, day string, wl string) {
 		}
 		println("")
 		analdmenu(day)
+	}
+}
+func analreason(s string, wl string, d string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	defer db.Close()
+
+	var (
+		cause   string
+		deck    string
+		results int
+	)
+
+	if wl == "w" {
+		results = 0
+	} else if wl == "l" {
+		results = 1
+	}
+
+	if d != "n" && wl != "a" {
+		results, err := db.Query("SELECT cause FROM mtga.games WHERE cause LIKE CONCAT('%', ?, '%') AND deck =? AND results LIKE CONCAT('%', ?, '%')", s, d, results)
+		//err := results.Scan(&cause)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analreasonmenu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&cause)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			finalstring := fmt.Sprint("Deck: " + d + " Reasons: " + cause)
+			fmt.Println(finalstring)
+		}
+		println("")
+		analreasonmenu()
+	} else if d == "n" && wl != "a" {
+		results, err := db.Query("SELECT deck, cause FROM mtga.games WHERE cause LIKE CONCAT('%', ?, '%') AND results LIKE CONCAT('%', ?, '%') ORDER BY deck", s, results)
+
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analreasonmenu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deck, &cause)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			fdeck := fmt.Sprintf("%-50s", "Deck: "+deck)
+			finalstring := fmt.Sprint(fdeck + " Reasons: " + cause)
+			fmt.Println(finalstring)
+		}
+		println("")
+		analreasonmenu()
+	} else if d != "n" && wl == "a" {
+		results, err := db.Query("SELECT cause FROM mtga.games WHERE cause LIKE CONCAT('%', ?, '%') AND deck =?", s, d)
+		//err := results.Scan(&cause)
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analreasonmenu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&cause)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			finalstring := fmt.Sprint("Deck: " + d + " Reasons: " + cause)
+			fmt.Println(finalstring)
+		}
+		println("")
+		analreasonmenu()
+	} else if d == "n" && wl == "a" {
+		results, err := db.Query("SELECT deck, cause FROM mtga.games WHERE cause LIKE CONCAT('%', ?, '%') ORDER BY deck", s)
+
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analreasonmenu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deck, &cause)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			fdeck := fmt.Sprintf("%-50s", "Deck: "+deck)
+			finalstring := fmt.Sprint(fdeck + " Reasons: " + cause)
+			fmt.Println(finalstring)
+		}
+		println("")
+		analreasonmenu()
 	}
 }
