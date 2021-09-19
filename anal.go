@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func anal_menu() {
@@ -45,6 +46,8 @@ func anal_menu() {
 		gamebyday()
 	case 2:
 		analreasonmenu()
+	case 3:
+		analtimemenu()
 	case 10:
 		main()
 	case 11:
@@ -234,6 +237,68 @@ func analreasonmenu() {
 	default:
 		analreasonmenu()
 	}
+}
+func analtimemenu() {
+	//analysis time of day menu
+	fmt.Println("Reason")
+	m := make(map[string]string)
+
+	// Set key/value pairs using typical `name[key] = val`
+	m["k1"] = fmt.Sprintf("%-50s", "Wins Between Midnight and 6am")
+	m["k2"] = fmt.Sprintf("%-50s", "Wins Between 6am and Noon")
+	m["k3"] = fmt.Sprintf("%-50s", "Wins Between Noon and 6pm")
+	m["k4"] = fmt.Sprintf("%-50s", "Wins Between 6pm and Midnight")
+	m["k5"] = fmt.Sprintf("%0s", "Loses Between Midnight and 6am")
+	m["k6"] = fmt.Sprintf("%0s", "Loses Between 6am and Noon")
+	m["k7"] = fmt.Sprintf("%0s", "Loses Between Noon and 6pm")
+	m["k8"] = fmt.Sprintf("%24s", "Losese Between 6pm and Midnight")
+	m["k9"] = fmt.Sprintf("%0s", "Customized Start/End Time")
+	m["k10"] = fmt.Sprintf("%-50s", "Return to Previous Menu")
+	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
+	m["k12"] = fmt.Sprintf("%0s", "Quit")
+
+	// print menu options
+	fmt.Println(" 1:", m["k1"]+"5:", m["k5"])
+	fmt.Println(" 2:", m["k2"]+"6:", m["k6"])
+	fmt.Println(" 3:", m["k3"]+"7:", m["k7"])
+	fmt.Println(" 4:", m["k4"]+"8:", m["k8"])
+	fmt.Println("                            "+" 9:", m["k9"])
+	fmt.Println("10:", m["k10"]+"11:", m["k11"])
+	fmt.Println("12:", m["k12"])
+
+	in := bufio.NewScanner(os.Stdin)
+	in.Scan()
+	choice, _ := strconv.Atoi(in.Text())
+
+	switch choice {
+	case 1:
+		analtime("midnight", "w")
+	case 2:
+		analtime("morning", "w")
+	case 3:
+		analtime("noon", "w")
+	case 4:
+		analtime("night", "w")
+	case 5:
+		analtime("midnight", "l")
+	case 6:
+		analtime("morning", "l")
+	case 7:
+		analtime("noon", "l")
+	case 8:
+		analtime("night", "l")
+	case 9:
+		analtime("custom", "")
+	case 10:
+		anal_menu()
+	case 11:
+		main()
+	case 12:
+		os.Exit(0)
+	default:
+		analtimemenu()
+	}
+	//analtime()
 }
 func gamebyday() {
 	m := make(map[string]string)
@@ -658,5 +723,130 @@ func analreason(s string, wl string, d string) {
 		}
 		println("")
 		analreasonmenu()
+	}
+}
+func analtime(t string, wl string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	defer db.Close()
+
+	var (
+		rcount int
+		deck   string
+		cause  string
+		hour   string
+		s      string
+		e      string
+		iwl    int
+	)
+
+	in := bufio.NewScanner(os.Stdin)
+	println("Do you want to specify a deck?(y/n)")
+	in.Scan()
+	confirmchoice := in.Text()
+	confirmchoice = validateuserinput(confirmchoice, "confirm")
+
+	if t == "midnight" {
+		s = "00:00:00"
+		e = "06:00:00"
+	} else if t == "morning" {
+		s = "06:00:00"
+		e = "12:00:00"
+	} else if t == "noon" {
+		s = "12:00:00"
+		e = "18:00:00"
+	} else if t == "night" {
+		s = "18:00:00"
+		e = "23:00:59"
+	} else if t == "custom" {
+		println("Custom")
+	}
+
+	if wl == "w" {
+		iwl = 0
+	} else if wl == "l" {
+		iwl = 1
+	}
+
+	if confirmchoice == "n" {
+		results, err := db.Query("SELECT deck, cause, TIME(`Timestamp`) AS playtime FROM mtga.games WHERE (TIME(`Timestamp`) BETWEEN ? AND ?) AND results =? ORDER BY deck", s, e, iwl)
+
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analtimemenu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deck, &cause, &hour)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+
+			layout1 := "03:04:05 PM"
+			layout2 := "15:04:05"
+			t, err := time.Parse(layout2, hour)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fdeck := fmt.Sprintf("%-30s", "Deck: "+deck)
+			fhour := fmt.Sprintf("%-25s", "Hour: "+t.Format(layout1))
+			finalstring := fmt.Sprint(fdeck + fhour + " Reasons: " + cause)
+			rcount++
+			fmt.Println(finalstring)
+		}
+		println("Total Row Count: " + strconv.Itoa(rcount))
+		println("")
+		analtimemenu()
+	} else if confirmchoice == "y" {
+		println("Deck:")
+		in.Scan()
+		deckchoice := in.Text()
+		deckchoice = validatedeck(deckchoice)
+
+		results, err := db.Query("SELECT deck, cause, TIME(`Timestamp`) AS playtime FROM mtga.games WHERE (TIME(`Timestamp`) BETWEEN ? AND ?) AND results =? AND deck =?", s, e, iwl, deckchoice)
+
+		if err != nil {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				fmt.Println("No Games Recored for this Deck")
+				fmt.Println("")
+				analtimemenu()
+			} else {
+				panic(err.Error())
+			}
+		}
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deck, &cause, &hour)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+
+			layout1 := "03:04:05 PM"
+			layout2 := "15:04:05"
+			t, err := time.Parse(layout2, hour)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fdeck := fmt.Sprintf("%-30s", "Deck: "+deck)
+			fhour := fmt.Sprintf("%-25s", "Hour: "+t.Format(layout1))
+			finalstring := fmt.Sprint(fdeck + fhour + " Reasons: " + cause)
+			rcount++
+			fmt.Println(finalstring)
+		}
+		println("Total Row Count: " + strconv.Itoa(rcount))
+		println("")
+		analtimemenu()
 	}
 }
