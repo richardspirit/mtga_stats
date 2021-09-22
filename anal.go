@@ -53,9 +53,13 @@ func anal_menu() {
 	case 5:
 		recdelete()
 	case 6:
-		deckbycardmenu()
+		deckbycardmenu("card")
 	case 7:
-		deckbycreatmenu()
+		deckbycardmenu("creature")
+	case 8:
+		deckbycardmenu("non-creature")
+	case 9:
+		deckbycardmenu("land")
 	case 10:
 		main()
 	case 11:
@@ -470,13 +474,13 @@ func gamebydaymenu() {
 		gamebydaymenu()
 	}
 }
-func deckbycardmenu() {
+func deckbycardmenu(cardtype string) {
 	m := make(map[string]string)
 	fmt.Println("Choose Options Below")
-	m["k1"] = fmt.Sprintf("%-30s", "Most wins by total card number")
-	m["k2"] = fmt.Sprintf("%-30s", "Most loses by total card number")
-	m["k3"] = fmt.Sprintf("%-30s", "Wins for all decks by total card number")
-	m["k4"] = fmt.Sprintf("%-25s", "Loses for all decks by total card number")
+	m["k1"] = fmt.Sprintf("%-30s", "Most wins by total "+cardtype+" number")
+	m["k2"] = fmt.Sprintf("%-30s", "Most loses by total "+cardtype+" number")
+	m["k3"] = fmt.Sprintf("%-30s", "Wins for all decks by total "+cardtype+" number")
+	m["k4"] = fmt.Sprintf("%-25s", "Loses for all decks by total "+cardtype+" number")
 	m["k10"] = fmt.Sprintf("%0s", "Return to Previous Menu")
 	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
 	m["k12"] = fmt.Sprintf("%0s", "Quit")
@@ -495,59 +499,27 @@ func deckbycardmenu() {
 	in.Scan()
 	choice, _ := strconv.Atoi(in.Text())
 
-	switch choice {
-	case 1:
-		analdeckcard("w", "")
-	case 2:
-		analdeckcard("l", "")
-	case 3:
-		analdeckcard("w", "all")
-	case 4:
-		analdeckcard("l", "all")
-	case 10:
-		anal_menu()
-	case 11:
-		main()
-	case 12:
-		os.Exit(0)
-	default:
-		deckbycardmenu()
+	var cardchoice string
+	switch cardtype {
+	case "card":
+		cardchoice = "numcards"
+	case "creature":
+		cardchoice = "numcreatures"
+	case "non-creature":
+		cardchoice = "numspells"
+	case "land":
+		cardchoice = "numlands"
 	}
-}
-func deckbycreatmenu() {
-	m := make(map[string]string)
-	fmt.Println("Choose Options Below")
-	m["k1"] = fmt.Sprintf("%-30s", "Most wins by total creature number")
-	m["k2"] = fmt.Sprintf("%-30s", "Most loses by total creature number")
-	m["k3"] = fmt.Sprintf("%-30s", "Wins for all decks by total creature number")
-	m["k4"] = fmt.Sprintf("%-25s", "Loses for all decks by total creature number")
-	m["k10"] = fmt.Sprintf("%0s", "Return to Previous Menu")
-	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
-	m["k12"] = fmt.Sprintf("%0s", "Quit")
-
-	// print menu options
-	fmt.Println(" 1:", m["k1"])
-	fmt.Println(" 2:", m["k2"])
-	fmt.Println(" 3:", m["k3"])
-	fmt.Println(" 4:", m["k4"])
-	println("")
-	fmt.Println("10:", m["k10"])
-	fmt.Println("11:", m["k11"])
-	fmt.Println("12:", m["k12"])
-
-	in := bufio.NewScanner(os.Stdin)
-	in.Scan()
-	choice, _ := strconv.Atoi(in.Text())
 
 	switch choice {
 	case 1:
-		analdeckcreat("w", "")
+		analdeckcard("wins", "", cardchoice)
 	case 2:
-		analdeckcreat("l", "")
+		analdeckcard("loses", "", cardchoice)
 	case 3:
-		analdeckcreat("w", "all")
+		analdeckcard("wins", "all", cardchoice)
 	case 4:
-		analdeckcreat("l", "all")
+		analdeckcard("loses", "all", cardchoice)
 	case 10:
 		anal_menu()
 	case 11:
@@ -555,7 +527,7 @@ func deckbycreatmenu() {
 	case 12:
 		os.Exit(0)
 	default:
-		deckbycardmenu()
+		deckbycardmenu(cardtype)
 	}
 }
 func analday(d string, win_lose string) {
@@ -1184,235 +1156,74 @@ func recdelete() {
 	println("")
 	anal_menu()
 }
-func analdeckcard(wl string, all string) {
+func analdeckcard(wl string, all string, card string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
 	defer db.Close()
 
 	var (
-		cards int
-		wins  int
-		loses int
+		cardtype    int
+		winlose     int
+		finalstring string
+		stmt        string
 	)
 
-	if wl == "w" && all == "" {
-		results, err := db.Query("SELECT numcards,wins FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck GROUP BY numcards, wins ORDER BY wins DESC, numcards DESC")
+	if all == "" {
+		stmt = "SELECT " + card + ", " + wl + " FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck GROUP BY " + card + ", " + wl + " ORDER BY " + wl + " DESC, " + card + " DESC LIMIT 10"
+	} else if all == "all" {
+		stmt = "SELECT " + card + ", " + wl + " FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck ORDER BY " + wl + " DESC, " + card + " DESC"
+	}
 
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
-		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&cards, &wins)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcards := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(cards))
-			fwins := fmt.Sprintf("%0s", "Wins: "+strconv.Itoa(wins))
-			finalstring := fmt.Sprint(fcards + fwins)
-			fmt.Println(finalstring)
-		}
-	} else if wl == "l" && all == "" {
-		results, err := db.Query("SELECT numcards,loses FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck GROUP BY numcards, loses ORDER BY loses DESC, numcards DESC")
+	results, err := db.Query(stmt)
 
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
-		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&cards, &loses)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcards := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(cards))
-			floses := fmt.Sprintf("%0s", "Loses: "+strconv.Itoa(loses))
-			finalstring := fmt.Sprint(fcards + floses)
-			fmt.Println(finalstring)
-		}
-	} else if wl == "w" && all == "all" {
-		results, err := db.Query("SELECT numcards,wins FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck ORDER BY wins DESC, numcards DESC")
-
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
-		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&cards, &wins)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcards := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(cards))
-			fwins := fmt.Sprintf("%0s", "Wins: "+strconv.Itoa(wins))
-			finalstring := fmt.Sprint(fcards + fwins)
-			fmt.Println(finalstring)
-		}
-	} else if wl == "l" && all == "all" {
-		results, err := db.Query("SELECT numcards,loses FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck ORDER BY loses DESC, numcards DESC")
-
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
-		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&cards, &loses)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcards := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(cards))
-			floses := fmt.Sprintf("%0s", "Loses: "+strconv.Itoa(loses))
-			finalstring := fmt.Sprint(fcards + floses)
-			fmt.Println(finalstring)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			fmt.Println("No Games Recored for this Deck")
+			fmt.Println("")
+			anal_menu()
+		} else {
+			panic(err.Error())
 		}
 	}
-	println("")
-	deckbycardmenu()
-}
-func analdeckcreat(wl string, all string) {
-	// Open up our database connection.
-	db := opendb()
-	// defer the close till after the main function has finished
-	defer db.Close()
-
-	var (
-		creatures int
-		wins      int
-		loses     int
-	)
-
-	if wl == "w" && all == "" {
-		results, err := db.Query("SELECT numcreatures, wins FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck GROUP BY numcreatures, wins ORDER BY wins DESC, numcreatures DESC")
-
+	for results.Next() {
+		// for each row, scan the result into our deck composite object
+		err = results.Scan(&cardtype, &winlose)
 		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
+			panic(err.Error()) // proper error handling instead of panic in your app
 		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&creatures, &wins)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcreatures := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(creatures))
-			fwins := fmt.Sprintf("%0s", "Wins: "+strconv.Itoa(wins))
-			finalstring := fmt.Sprint(fcreatures + fwins)
-			fmt.Println(finalstring)
+		// and then print out the tag's Name attribute
+		log.SetFlags(0)
+		switch card {
+		case "numspells":
+			card = "Total Non-Creatures: "
+		case "numcards":
+			card = "Total Cards: "
+		case "numcreatures":
+			card = "Total Creatures: "
+		case "numlands":
+			card = "Total Lands: "
 		}
-	} else if wl == "l" && all == "" {
-		results, err := db.Query("SELECT numcreatures,loses FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck GROUP BY numcreatures, loses ORDER BY loses DESC, numcreatures DESC")
-
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
+		switch wl {
+		case "wins":
+			wl = "Wins: "
+		case "loses":
+			wl = "Loses: "
 		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&creatures, &loses)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcreatures := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(creatures))
-			floses := fmt.Sprintf("%0s", "Loses: "+strconv.Itoa(loses))
-			finalstring := fmt.Sprint(fcreatures + floses)
-			fmt.Println(finalstring)
-		}
-	} else if wl == "w" && all == "all" {
-		results, err := db.Query("SELECT numcreatures,wins FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck ORDER BY wins DESC, numcreatures DESC")
-
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
-		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&creatures, &wins)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcreatures := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(creatures))
-			fwins := fmt.Sprintf("%0s", "Wins: "+strconv.Itoa(wins))
-			finalstring := fmt.Sprint(fcreatures + fwins)
-			fmt.Println(finalstring)
-		}
-	} else if wl == "l" && all == "all" {
-		results, err := db.Query("SELECT numcreatures,loses FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck ORDER BY loses DESC, numcreatures DESC")
-
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				anal_menu()
-			} else {
-				panic(err.Error())
-			}
-		}
-		for results.Next() {
-			// for each row, scan the result into our deck composite object
-			err = results.Scan(&creatures, &loses)
-			if err != nil {
-				panic(err.Error()) // proper error handling instead of panic in your app
-			}
-			// and then print out the tag's Name attribute
-			log.SetFlags(0)
-			fcreatures := fmt.Sprintf("%-20s", "Total Cards: "+strconv.Itoa(creatures))
-			floses := fmt.Sprintf("%0s", "Loses: "+strconv.Itoa(loses))
-			finalstring := fmt.Sprint(fcreatures + floses)
-			fmt.Println(finalstring)
-		}
+		fcardtype := fmt.Sprintf("%-30s", card+strconv.Itoa(cardtype))
+		fwinlose := fmt.Sprintf("%0s", wl+strconv.Itoa(winlose))
+		finalstring = fmt.Sprint(fcardtype + fwinlose)
+		fmt.Println(finalstring)
 	}
-	println("")
-	deckbycreatmenu()
+	println()
+	switch card {
+	case "Total Non-Creatures: ":
+		deckbycardmenu("non-creature")
+	case "Total Cards: ":
+		deckbycardmenu("card")
+	case "Total Creatures: ":
+		deckbycardmenu("creature")
+	case "Total Lands: ":
+		deckbycardmenu("land")
+	}
 }
