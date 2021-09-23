@@ -62,7 +62,8 @@ func menu() {
 	m["k7"] = fmt.Sprintf("%-25s", "Edit Deck")
 	m["k8"] = fmt.Sprintf("%0s", "Win/Lose Percent")
 	m["k9"] = fmt.Sprintf("%-25s", "Analysis")
-	m["k10"] = fmt.Sprintf("%0s", "Quit")
+	m["k10"] = fmt.Sprintf("%0s", "Favorites")
+	m["k11"] = fmt.Sprintf("%0s", "Quit")
 
 	// print menu options
 	fmt.Println("1:", m["k1"]+" 2:", m["k2"])
@@ -70,6 +71,7 @@ func menu() {
 	fmt.Println("5:", m["k5"]+" 6:", m["k6"])
 	fmt.Println("7:", m["k7"]+" 8:", m["k8"])
 	fmt.Println("9:", m["k9"]+"10:", m["k10"])
+	fmt.Println("11:", m["k11"])
 
 	in := bufio.NewScanner(os.Stdin)
 	in.Scan()
@@ -273,6 +275,7 @@ func menu() {
 		fmt.Println("Would you like to see a specific deck details?(y/n)")
 		deckchoice, _ := reader.ReadString('\n')
 		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
+		deckchoice = validateuserinput(deckchoice, "confirm")
 		if deckchoice == "y" {
 			fmt.Println("Deck Name: ")
 			deckname, _ := reader.ReadString('\n')
@@ -300,12 +303,48 @@ func menu() {
 	case 9:
 		anal_menu()
 	case 10:
+		favmenu()
+	case 11:
 		os.Exit(0)
 	default:
 		//Reset Menu for invalid in put
 		fmt.Println("Invalid Selection.")
 		fmt.Println("")
 		menu()
+	}
+}
+func favmenu() {
+	fmt.Println("mtga Stats")
+	m := make(map[string]string)
+
+	// Set key/value pairs using typical `name[key] = val`
+	m["k1"] = fmt.Sprintf("%-25s", "List Favorites")
+	m["k2"] = fmt.Sprintf("%0s", "Reset Favorites")
+	m["k3"] = fmt.Sprintf("%-25s", "Assign Top Ten to Favorites")
+	m["k10"] = fmt.Sprintf("%-24s", "Return to Main Menu")
+	m["k11"] = fmt.Sprintf("%0s", "Quit")
+
+	fmt.Println("1:", m["k1"])
+	fmt.Println("2:", m["k2"])
+	fmt.Println("3:", m["k3"])
+	fmt.Println("10:", m["k10"])
+	fmt.Println("11:", m["k11"])
+
+	in := bufio.NewScanner(os.Stdin)
+	in.Scan()
+	choice, _ := strconv.Atoi(in.Text())
+
+	switch choice {
+	case 1:
+		favs("list", "")
+	case 2:
+		favs("reset", "")
+	case 3:
+		favs("assign", "")
+	case 10:
+		main()
+	case 11:
+		os.Exit(0)
 	}
 }
 func opendb() *sql.DB {
@@ -989,4 +1028,71 @@ func streaks(d string) {
 		panic(err.Error())
 	}
 	log.Println("deck updated ", rows)
+}
+func favs(action string, assign string) {
+	// Open up our database connection.
+	db := opendb()
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+
+	var (
+		deck         string
+		date_entered time.Time
+		wins         int
+		loses        int
+	)
+
+	switch action {
+	case "list":
+		results, err := db.Query("SELECT name, date_entered, wins, loses FROM mtga.decks d JOIN record r ON d.name = r.deck WHERE favorite = 0")
+
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+
+		for results.Next() {
+			// for each row, scan the result into our deck composite object
+			err = results.Scan(&deck, &date_entered, &wins, &loses)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			//format strings to be more readable
+			deck = fmt.Sprintf("%-25s", deck)
+			fdate := fmt.Sprintf("%-20s", date_entered.Format("2006-01-02"))
+			finalrecord := fmt.Sprint("Deck: " + deck + " Date Entered: " + fdate + " Wins: " + strconv.Itoa(wins) + " Loses: " + strconv.Itoa(loses))
+			log.Println(finalrecord)
+		}
+	case "reset":
+		// perform a db.Query insert
+		result, err := db.Exec("UPDATE mtga.decks SET favorite=1")
+
+		rows, _ := result.RowsAffected()
+
+		fmt.Println(rows)
+		if err != nil {
+			log.Printf("Error %s when finding rows affected", err)
+			panic(err.Error())
+		}
+		log.Println("deck favorites reset ")
+	case "assign":
+		favs("reset", "y")
+		// perform a db.Query insert
+		result, err := db.Exec("UPDATE mtga.decks d SET favorite=0 WHERE name IN (SELECT deck FROM mtga.topten)")
+
+		rows, _ := result.RowsAffected()
+
+		fmt.Println(rows)
+		if err != nil {
+			log.Printf("Error %s when finding rows affected", err)
+			panic(err.Error())
+		}
+		log.Println("Top Ten assigned to deck favorites.")
+	}
+	if assign != "y" {
+		println("")
+		favmenu()
+	}
 }
