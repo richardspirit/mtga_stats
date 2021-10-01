@@ -4,9 +4,12 @@ import (
 	"bufio"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,6 +46,65 @@ type Records struct {
 	Wins  int    `json:"wins"`
 	Loses int    `json:"loses"`
 }
+type Cards struct {
+	Cards []struct {
+		Artist        string        `json:"artist"`
+		Availability  []string      `json:"availability"`
+		BorderColor   string        `json:"borderColor"`
+		ColorIdentity []string      `json:"colorIdentity"`
+		Colors        []string      `json:"colors"`
+		ConvertedMana float64       `json:"convertedManaCost"`
+		Rank          int           `json:"edhrecRank"`
+		Finishes      []string      `json:"finishes"`
+		ForeignData   []interface{} `json:"foreignData"`
+		FrameVersion  string        `json:"frameVersion"`
+		Foil          bool          `json:"hasFoil"`
+		NonFoil       bool          `json:"hasNonFoil"`
+		Identifiers   struct {
+			McmID             string `json:"mcmId"`
+			JSONID            string `json:"mtgjsonV4Id"`
+			MultiverseID      string `json:"multiverseId"`
+			ScryfallID        string `json:"scryfallId"`
+			ScryFallPictureID string `json:"scryfallIllustrationId"`
+			ScryfallOracleID  string `json:"scryfallOracleId"`
+			ProductID         string `json:"tcgplayerProductId"`
+		} `json:"identifiers"`
+		Reprint    bool     `json:"isReprint"`
+		Keywords   []string `json:"keywords"`
+		Layout     string   `json:"layout"`
+		Legalities struct {
+			Commander string `json:"commander"`
+			Duel      string `json:"duel"`
+			Legacy    string `json:"legacy"`
+			Oldschool string `json:"oldschool"`
+			Penny     string `json:"penny"`
+			Premodern string `json:"premodern"`
+			Vintage   string `json:"vintage"`
+		} `json:"legalities"`
+		ManaCost     string   `json:"manaCost"`
+		ManaValue    float64  `json:"manaValue"`
+		Name         string   `json:"name"`
+		Number       string   `json:"number"`
+		OriginalText string   `json:"originalText"`
+		OriginalType string   `json:"originalType"`
+		Printings    []string `json:"printings"`
+		PurchaseUrls struct {
+			Tcgplayer string `json:"tcgplayer"`
+		} `json:"purchaseUrls"`
+		Rarity  string `json:"rarity"`
+		Rulings []struct {
+			Date string `json:"date"`
+			Text string `json:"text"`
+		} `json:"rulings"`
+		SetCode    string   `json:"setCode"`
+		Subtypes   []string `json:"subtypes"`
+		Supertypes []string `json:"supertypes"`
+		Text       string   `json:"text"`
+		Type       string   `json:"type"`
+		Types      []string `json:"types"`
+		UUID       string   `json:"uuid"`
+	} `json:"cards"`
+}
 
 func main() {
 	menu()
@@ -64,7 +126,8 @@ func menu() {
 	m["k8"] = fmt.Sprintf("%0s", "Win/Lose Percent")
 	m["k9"] = fmt.Sprintf("%-25s", "Analysis")
 	m["k10"] = fmt.Sprintf("%0s", "Favorites")
-	m["k11"] = fmt.Sprintf("%0s", "Quit")
+	m["k11"] = fmt.Sprintf("%-24s", "Import Set Data")
+	m["k12"] = fmt.Sprintf("%0s", "Quit")
 
 	// print menu options
 	fmt.Println("1:", m["k1"]+" 2:", m["k2"])
@@ -72,7 +135,7 @@ func menu() {
 	fmt.Println("5:", m["k5"]+" 6:", m["k6"])
 	fmt.Println("7:", m["k7"]+" 8:", m["k8"])
 	fmt.Println("9:", m["k9"]+"10:", m["k10"])
-	fmt.Println("11:", m["k11"])
+	fmt.Println("11:", m["k11"]+"12:", m["k12"])
 
 	in := bufio.NewScanner(os.Stdin)
 	in.Scan()
@@ -362,6 +425,8 @@ func menu() {
 	case 10:
 		favmenu()
 	case 11:
+		importset()
+	case 12:
 		os.Exit(0)
 	default:
 		//Reset Menu for invalid in put
@@ -1284,4 +1349,96 @@ func importdeck(d Deck) {
 
 	d.Date_Entered = time.Now()
 	newdeck(d)
+}
+func importset() {
+	// Open up our database connection.
+	db := opendb()
+	//set max connections
+	db.SetMaxOpenConns(1000)
+	db.SetMaxIdleConns(1000)
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+
+	osvar, _ := os.Open(os.Getenv("GOPATH"))
+
+	set_files, _ := filepath.Glob(osvar.Name() + `\GoMGTA\AllSetFiles\*.json`)
+
+	for _, set_file := range set_files {
+
+		sfile, err := os.Open(set_file)
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer sfile.Close()
+
+		// read our opened jsonFile as a byte array.
+		byteValue, _ := ioutil.ReadAll(sfile)
+		// we initialize our Users array
+		var (
+			cards   Cards
+			trows   int
+			s       string
+			setname string
+		)
+		//println("More Testing: ", byteValue)
+		json.Unmarshal(byteValue, &cards)
+
+		//verify file has not already been loaded
+		results := db.QueryRow("SELECT DISTINCT set_code FROM mtga.sets WHERE set_code=?", cards.Cards[0].SetCode)
+		err = results.Scan(&s)
+		if err == nil {
+			println("File has already been loaded: ", set_file)
+			continue
+		}
+
+		// we iterate through every user within our cards array
+		for i := 0; i < len(cards.Cards); i++ {
+
+			nresult := db.QueryRow("SELECT DISTINCT set_name FROM mtga.set_abbreviations WHERE set_abbrev=?", cards.Cards[i].SetCode)
+			err = nresult.Scan(&setname)
+
+			if err != nil {
+				log.Println("Set Name is Missing")
+			}
+			//deal with arrays in json file
+			var (
+				colors     string
+				types      string
+				supertypes string
+				subtypes   string
+			)
+			for _, s := range cards.Cards[i].Colors {
+				colors = colors + s
+			}
+			for _, s := range cards.Cards[i].Subtypes {
+				subtypes = subtypes + s
+			}
+			for _, s := range cards.Cards[i].Supertypes {
+				supertypes = supertypes + s
+			}
+			for _, s := range cards.Cards[i].Types {
+				types = types + s
+			}
+
+			// perform a db.Query insert
+			upresult, err := db.Exec("INSERT INTO mtga.sets(set_name, card_name, colors, mana_cost, mana_colors, converted_mana_cost, set_number, card_text, type, sub_type, super_type, types, rarity, set_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				setname, cards.Cards[i].Name, colors, cards.Cards[i].ManaValue, cards.Cards[i].ManaCost, cards.Cards[i].ConvertedMana, cards.Cards[i].Number, cards.Cards[i].OriginalText, cards.Cards[i].Type, subtypes, supertypes, types, cards.Cards[i].Rarity, cards.Cards[i].SetCode)
+			if err != nil {
+				println(cards.Cards[i].Name)
+				log.Printf("Error %s when inserting row into sets table", err)
+				panic(err.Error())
+			}
+			rows, _ := upresult.RowsAffected()
+
+			if err != nil {
+				log.Printf("Error %s when finding rows affected", err)
+				panic(err.Error())
+			}
+			trows = trows + int(rows)
+		}
+		log.Println("Set: " + setname + " Total Rows Inserted: " + strconv.Itoa(trows))
+	}
+	println("")
+	main()
 }
