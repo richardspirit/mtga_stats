@@ -151,8 +151,11 @@ func menu() {
 		fmt.Println("Deck Name: ")
 		name, _ := reader.ReadString('\n')
 		name = strings.TrimSuffix(name, "\r\n")
-		fmt.Println("Your new deck name is " + name)
-		fmt.Println("Is this deck a multi color deck?(y/n)")
+		fmt.Println("Deck Name: " + name)
+		fmt.Println("Sync to Existing Deck(y/n)")
+		syncd, _ := reader.ReadString('\n')
+		syncd = strings.TrimSuffix(syncd, "\r\n")
+		fmt.Println("Multi-Colored Deck(y/n)")
 		multi, _ := reader.ReadString('\n')
 		multi = strings.TrimSuffix(multi, "\r\n")
 		//validate user input
@@ -198,34 +201,16 @@ func menu() {
 		} else {
 			*favorite_bin = 1
 		}
-		fmt.Println("Total number of instant/sorcery/enchantment: ")
-		numspells, _ := reader.ReadString('\n')
-		numspells = strings.TrimSuffix(numspells, "\r\n")
-		ispells := new(int)
-		*ispells, _ = strconv.Atoi(numspells)
-		fmt.Print("Total number of instant/sorcery/enchantment: " + numspells + "\n")
-		fmt.Println("Total number of creatures: ")
-		numcreatures, _ := reader.ReadString('\n')
-		numcreatures = strings.TrimSuffix(numcreatures, "\r\n")
-		icreatures := new(int)
-		*icreatures, _ = strconv.Atoi(numcreatures)
-		fmt.Print("Total number of creatures: " + numcreatures + "\n")
+
 		if edchoice == "import" || edchoice == "Import" {
 			fmt.Println("Import Option")
-			/* 			fmt.Println("Deck Name:")
-			   			name, _ := reader.ReadString('\n')
-			   			name = strings.TrimSuffix(name, "\r\n")
-			   			fmt.Println("Your new deck name is " + name) */
-			fmt.Println("Default import path (" + os.Getenv("USERPROFILE") + `\Downloads\deckimport.txt)`)
 			d := Deck{
 				Name:         name,
 				Colors:       color,
 				Date_Entered: time.Now(),
 				Favorite:     int(*favorite_bin),
-				Num_Spells:   int(*ispells),
-				Num_Creat:    int(*icreatures),
 			}
-			importdeck(d)
+			importdeck(d, syncd)
 		} else if edchoice == "enter" || edchoice == "Enter" {
 			fmt.Println("Total Number of cards: ")
 			numcards, _ := reader.ReadString('\n')
@@ -233,6 +218,18 @@ func menu() {
 			icards := new(int)
 			*icards, _ = strconv.Atoi(numcards)
 			fmt.Print("Total number of cards: " + numcards + "\n")
+			fmt.Println("Total number of instant/sorcery/enchantment: ")
+			numspells, _ := reader.ReadString('\n')
+			numspells = strings.TrimSuffix(numspells, "\r\n")
+			ispells := new(int)
+			*ispells, _ = strconv.Atoi(numspells)
+			fmt.Print("Total number of instant/sorcery/enchantment: " + numspells + "\n")
+			fmt.Println("Total number of creatures: ")
+			numcreatures, _ := reader.ReadString('\n')
+			numcreatures = strings.TrimSuffix(numcreatures, "\r\n")
+			icreatures := new(int)
+			*icreatures, _ = strconv.Atoi(numcreatures)
+			fmt.Print("Total number of creatures: " + numcreatures + "\n")
 			fmt.Println("Total number of lands: ")
 			numlands, _ := reader.ReadString('\n')
 			numlands = strings.TrimSuffix(numlands, "\r\n")
@@ -781,6 +778,7 @@ func editdeck(d string) {
 	case "name":
 		fmt.Println("Original Name: " + deck.Name)
 		fmt.Print("New Name: ")
+		//save original name
 		oname := deck.Name
 		reader := bufio.NewReader(os.Stdin)
 		deck.Name, _ = reader.ReadString('\n')
@@ -1243,14 +1241,28 @@ func favs(action string, assign string) {
 		favmenu()
 	}
 }
-func importdeck(d Deck) {
+func importdeck(d Deck, s string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
 	// executing
 	defer db.Close()
 
-	file, err := os.Open(os.Getenv("USERPROFILE") + `\Downloads\deckimport.txt`)
+	defpath := os.Getenv("GOPATH") + `\GoMGTA\`
+	in := bufio.NewScanner(os.Stdin)
+	println("Default Path: " + defpath + " Change?(y/n)")
+	in.Scan()
+	choice := validateuserinput(in.Text(), "confirm")
+	if choice == "y" {
+		println("New Path: ")
+		in.Scan()
+		defpath = in.Text() + `\`
+	}
+	println("File Name: ")
+	in.Scan()
+	finalpath := defpath + in.Text()
+
+	file, err := os.Open(finalpath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -1287,10 +1299,12 @@ func importdeck(d Deck) {
 						snumcopy = string(lnslce)
 					} else if numcopy != 0 && name == "" {
 						snumcopy = snumcopy + string(lnslce)
-					} else if num == 0 && name != "" {
+					} else if numcopy != 0 && name != "" && set != "" && set[len(set)-2:] != ") " {
+						set = set + string(lnslce)
+					} else if num == 0 && name != "" && set != "" {
 						num, _ = strconv.Atoi(string(lnslce))
 						snum = string(lnslce)
-					} else if num != 0 && name != "" {
+					} else if num != 0 {
 						snum = snum + string(lnslce)
 					}
 				} else {
@@ -1305,6 +1319,7 @@ func importdeck(d Deck) {
 			}
 			numcopy, _ = strconv.Atoi(snumcopy)
 			num, _ = strconv.Atoi(snum)
+			set = strings.TrimSpace(set)
 			set = strings.TrimLeft(strings.TrimRight(set, ")"), "(")
 			name = strings.TrimLeft(strings.TrimRight(name, " "), " ")
 			if numcopy == 0 && num == 0 {
@@ -1322,7 +1337,7 @@ func importdeck(d Deck) {
 			defer stmt.Close()
 			res, err := stmt.ExecContext(ctx, deck, numcopy, name, set, num, side)
 			if err != nil {
-				log.Printf("Error %s when inserting row into deck table", err)
+				log.Printf("Error %s when inserting row into card table", err)
 				panic(err.Error())
 			}
 			rows, err := res.RowsAffected()
@@ -1341,14 +1356,31 @@ func importdeck(d Deck) {
 		panic(err.Error())
 	}
 
-	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE cardname IN ('Mountain','Plains','Island','Swamp','Forest') AND deck=?", d.Name)
+	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE cardname IN (SELECT DISTINCT card_name FROM mtga.sets WHERE types = 'Land') AND deck=?", d.Name)
 	err = results.Scan(&d.Num_Lands)
 	if err != nil {
 		panic(err.Error())
 	}
 
+	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE side_board <> 'y' AND cardname IN (SELECT DISTINCT SUBSTRING_INDEX(card_name,'/',1) FROM mtga.sets WHERE types = 'Creature') AND deck=?", d.Name)
+	err = results.Scan(&d.Num_Creat)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE side_board <> 'y' AND cardname IN (SELECT DISTINCT card_name FROM mtga.`sets` WHERE types NOT IN ('Creature','Land')) AND deck=?", d.Name)
+	err = results.Scan(&d.Num_Spells)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	d.Date_Entered = time.Now()
-	newdeck(d)
+	d.Disable = 1
+	if s == "n" {
+		newdeck(d)
+	} else if s == "y" {
+		updatedeck(d, d.Name)
+	}
 }
 func importset() {
 	// Open up our database connection.
