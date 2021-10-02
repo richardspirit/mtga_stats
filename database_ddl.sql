@@ -19,7 +19,7 @@ CREATE TABLE `mtga`.`decks` (
 
 -- mtga.games definition
 
-CREATE TABLE `mtga`.`games` (
+CREATE TABLE `games` (
   `UID` bigint(20) NOT NULL DEFAULT uuid_short(),
   `Timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `results` binary(1) DEFAULT '0',
@@ -27,6 +27,7 @@ CREATE TABLE `mtga`.`games` (
   `deck` varchar(100) NOT NULL,
   `opponent` varchar(100) DEFAULT 'Unknown',
   `level` varchar(100) DEFAULT 'Unknown',
+  `game_type` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`UID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -48,6 +49,42 @@ CREATE TABLE `mtga`.`decks_deleted` (
   PRIMARY KEY (`UID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+-- mtga.cards definition
+
+CREATE TABLE `cards` (
+  `deck` varchar(100) DEFAULT NULL,
+  `numcopy` int(11) DEFAULT NULL,
+  `cardname` varchar(100) DEFAULT NULL,
+  `set` varchar(100) DEFAULT NULL,
+  `setnum` int(11) DEFAULT NULL,
+  `side_board` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- mtga.set_abbreviations definition
+
+CREATE TABLE `set_abbreviations` (
+  `set_name` varchar(100) DEFAULT NULL,
+  `set_abbrev` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- mtga.`sets` definition
+
+CREATE TABLE `sets` (
+  `set_name` varchar(100) NOT NULL,
+  `card_name` varchar(100) DEFAULT NULL,
+  `colors` varchar(100) DEFAULT NULL,
+  `mana_cost` decimal(10,0) DEFAULT NULL,
+  `mana_colors` varchar(100) DEFAULT NULL,
+  `converted_mana_cost` decimal(10,0) DEFAULT NULL,
+  `set_number` int(11) DEFAULT NULL,
+  `card_text` text DEFAULT NULL,
+  `type` varchar(100) DEFAULT NULL,
+  `sub_type` varchar(100) DEFAULT NULL,
+  `super_type` varchar(100) DEFAULT NULL,
+  `types` varchar(100) DEFAULT NULL,
+  `rarity` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 -- mtga.game_count source
 
 create or replace
@@ -59,13 +96,12 @@ from
     `mtga`.`games` `g`
 group by
     `g`.`deck`;
-	
+
 -- mtga.record source
 
 create or replace
 algorithm = UNDEFINED view `mtga`.`record` as
 select
-   -- `g`.`UID` as `UID`,
     count(case when `g`.`results` = 0 then 1 end) as `wins`,
     count(case when `g`.`results` = 1 then 1 end) as `loses`,
     `g`.`deck` as `deck`
