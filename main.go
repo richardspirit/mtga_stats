@@ -48,19 +48,21 @@ type Records struct {
 }
 type Cards struct {
 	Cards []struct {
-		Artist        string        `json:"artist"`
-		Availability  []string      `json:"availability"`
-		BorderColor   string        `json:"borderColor"`
-		ColorIdentity []string      `json:"colorIdentity"`
-		Colors        []string      `json:"colors"`
-		ConvertedMana float64       `json:"convertedManaCost"`
-		Rank          int           `json:"edhrecRank"`
-		Finishes      []string      `json:"finishes"`
-		ForeignData   []interface{} `json:"foreignData"`
-		FrameVersion  string        `json:"frameVersion"`
-		Foil          bool          `json:"hasFoil"`
-		NonFoil       bool          `json:"hasNonFoil"`
-		Identifiers   struct {
+		Artist            string        `json:"artist"`
+		Availability      []string      `json:"availability"`
+		BorderColor       string        `json:"borderColor"`
+		ColorIdentity     []string      `json:"colorIdentity"`
+		Colors            []string      `json:"colors"`
+		ConvertedMana     float64       `json:"convertedManaCost"`
+		FaceConvertedMana float64       `json:"faceConvertedManaCost"`
+		FaceManaValue     float64       `json:"faceManaValue"`
+		Rank              int           `json:"edhrecRank"`
+		Finishes          []string      `json:"finishes"`
+		ForeignData       []interface{} `json:"foreignData"`
+		FrameVersion      string        `json:"frameVersion"`
+		Foil              bool          `json:"hasFoil"`
+		NonFoil           bool          `json:"hasNonFoil"`
+		Identifiers       struct {
 			McmID             string `json:"mcmId"`
 			JSONID            string `json:"mtgjsonV4Id"`
 			MultiverseID      string `json:"multiverseId"`
@@ -97,6 +99,7 @@ type Cards struct {
 			Text string `json:"text"`
 		} `json:"rulings"`
 		SetCode    string   `json:"setCode"`
+		Side       string   `json:"side"`
 		Subtypes   []string `json:"subtypes"`
 		Supertypes []string `json:"supertypes"`
 		Text       string   `json:"text"`
@@ -1321,7 +1324,7 @@ func importdeck(d Deck, s string) {
 			num, _ = strconv.Atoi(snum)
 			set = strings.TrimSpace(set)
 			set = strings.TrimLeft(strings.TrimRight(set, ")"), "(")
-			name = strings.TrimLeft(strings.TrimRight(name, " "), " ")
+			name = strings.TrimSpace(name)
 			if numcopy == 0 && num == 0 {
 				continue
 			}
@@ -1356,19 +1359,19 @@ func importdeck(d Deck, s string) {
 		panic(err.Error())
 	}
 
-	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE cardname IN (SELECT DISTINCT card_name FROM mtga.sets WHERE types = 'Land') AND deck=?", d.Name)
+	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE side_board <> 'y' AND cardname IN (SELECT DISTINCT SUBSTRING_INDEX(card_name,'/',1)  FROM mtga.sets WHERE types = 'Land' AND card_side IN ('a','')) AND deck=?", d.Name)
 	err = results.Scan(&d.Num_Lands)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE side_board <> 'y' AND cardname IN (SELECT DISTINCT SUBSTRING_INDEX(card_name,'/',1) FROM mtga.sets WHERE types = 'Creature') AND deck=?", d.Name)
+	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE side_board <> 'y' AND cardname IN (SELECT DISTINCT SUBSTRING_INDEX(card_name,'/',1) FROM mtga.sets WHERE types = 'Creature' AND card_side IN ('a','')) AND deck=?", d.Name)
 	err = results.Scan(&d.Num_Creat)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE side_board <> 'y' AND cardname IN (SELECT DISTINCT card_name FROM mtga.`sets` WHERE types NOT IN ('Creature','Land')) AND deck=?", d.Name)
+	results = db.QueryRow("SELECT SUM(numcopy) FROM mtga.cards WHERE side_board <> 'y' AND cardname IN (SELECT DISTINCT SUBSTRING_INDEX(card_name,'/',1)  FROM mtga.`sets` WHERE types NOT IN ('Creature','Land') AND card_side IN ('a','')) AND deck=?", d.Name)
 	err = results.Scan(&d.Num_Spells)
 	if err != nil {
 		panic(err.Error())
@@ -1392,9 +1395,22 @@ func importset() {
 	// executing
 	defer db.Close()
 
-	osvar, _ := os.Open(os.Getenv("GOPATH"))
-
-	set_files, _ := filepath.Glob(osvar.Name() + `\GoMGTA\AllSetFiles\*.json`)
+	var set_files []string
+	var osvar *os.File
+	defpath := `\GoMGTA\AllSetFiles\`
+	in := bufio.NewScanner(os.Stdin)
+	println("Default Path: " + os.Getenv("GOPATH") + defpath + " Change?(y/n)")
+	in.Scan()
+	choice := validateuserinput(in.Text(), "confirm")
+	if choice == "y" {
+		println("New Path: ")
+		in.Scan()
+		defpath = in.Text() + `\`
+		set_files, _ = filepath.Glob(defpath + `*.json`)
+	} else if choice == "n" {
+		osvar, _ = os.Open(os.Getenv("GOPATH"))
+		set_files, _ = filepath.Glob(osvar.Name() + defpath + `*.json`)
+	}
 
 	for _, set_file := range set_files {
 
@@ -1452,10 +1468,14 @@ func importset() {
 			for _, s := range cards.Cards[i].Types {
 				types = types + s
 			}
+			if cards.Cards[i].Layout == "split" || cards.Cards[i].Layout == "adventure" || cards.Cards[i].Layout == "aftermath" {
+				cards.Cards[i].ManaValue = cards.Cards[i].FaceManaValue
+				cards.Cards[i].ConvertedMana = cards.Cards[i].FaceConvertedMana
+			}
 
 			// perform a db.Query insert
-			upresult, err := db.Exec("INSERT INTO mtga.sets(set_name, card_name, colors, mana_cost, mana_colors, converted_mana_cost, set_number, card_text, type, sub_type, super_type, types, rarity, set_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-				setname, cards.Cards[i].Name, colors, cards.Cards[i].ManaValue, cards.Cards[i].ManaCost, cards.Cards[i].ConvertedMana, cards.Cards[i].Number, cards.Cards[i].OriginalText, cards.Cards[i].Type, subtypes, supertypes, types, cards.Cards[i].Rarity, cards.Cards[i].SetCode)
+			upresult, err := db.Exec("INSERT INTO mtga.sets(set_name, card_name, colors, mana_cost, mana_colors, converted_mana_cost, set_number, card_text, type, sub_type, super_type, types, rarity, set_code, card_side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				setname, cards.Cards[i].Name, colors, cards.Cards[i].ManaValue, cards.Cards[i].ManaCost, cards.Cards[i].ConvertedMana, cards.Cards[i].Number, cards.Cards[i].OriginalText, cards.Cards[i].Type, subtypes, supertypes, types, cards.Cards[i].Rarity, cards.Cards[i].SetCode, cards.Cards[i].Side)
 			if err != nil {
 				println(cards.Cards[i].Name)
 				log.Printf("Error %s when inserting row into sets table", err)
