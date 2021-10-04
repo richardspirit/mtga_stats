@@ -721,7 +721,7 @@ func topten() {
 	// executing
 	defer db.Close()
 
-	results, err := db.Query("SELECT deck, wins, loses FROM mtga.topten")
+	results, err := db.Query("SELECT deck, ranking, wins, loses FROM mtga.topten")
 
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
@@ -729,25 +729,36 @@ func topten() {
 
 	for results.Next() {
 		var (
-			name  string
-			wins  int
-			loses int
+			name    string
+			wins    int
+			loses   int
+			ranking float64
 		)
 
 		// for each row, scan the result into our deck composite object
-		err = results.Scan(&name, &wins, &loses)
+		err = results.Scan(&name, &ranking, &wins, &loses)
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
+
+		frank := fmt.Sprintf("%f", ranking)
+		frank = frank[2:6]
+		if ranking == 1 {
+			frank = "100"
+		}
+		//finalprint := fmt.Sprint(deckname + "   Win Percentage: " + fpct + "    Number of Wins: " + strconv.Itoa(count) +
+		//	"    Number of Games: " + strconv.Itoa(games))
+		//log.Println(finalprint)
 		// and then print out the tag's Name attribute
 		log.SetFlags(0)
 
 		//format strings to be more readable
 		name = fmt.Sprintf("%-25s", name)
+		frank = fmt.Sprintf("%-10s", frank)
 		fwins := fmt.Sprintf("%-5s", strconv.Itoa(wins))
 		floses := fmt.Sprintf("%-5s", strconv.Itoa(loses))
 
-		finalrecord := fmt.Sprint(name + " Wins: " + fwins + " Loses: " + floses)
+		finalrecord := fmt.Sprint(name + "Ranking: " + frank + " Wins: " + fwins + " Loses: " + floses)
 		log.Println(finalrecord)
 	}
 	fmt.Println("")
@@ -1077,13 +1088,9 @@ func pctvals(s string, d string) {
 		}
 		fpct := fmt.Sprintf("%f", pct)
 		fpct = fpct[2:4]
-		tpct := fpct[0:1]
-		println("Print test two: " + tpct)
 		if pct == 1 {
 			fpct = "100"
-			println("test one: " + fpct)
 		}
-		println("testing: " + fpct)
 		finalprint := fmt.Sprint(deckname + "   Win Percentage: " + fpct + "%    Number of Wins: " + strconv.Itoa(count) +
 			"    Number of Games: " + strconv.Itoa(games))
 		log.Println(finalprint)
