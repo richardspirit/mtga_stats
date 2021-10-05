@@ -19,32 +19,34 @@ import (
 )
 
 type Deck struct {
-	Name         string    `json:"name"`
-	Colors       string    `json:"colors"`
-	Date_Entered time.Time `json:"date_entered"`
-	Favorite     int       `json:"favorite"`
-	Max_Streak   int       `json:"max_streak"`
-	Cur_Streak   int       `json:"cur_streak"`
-	Num_Cards    int       `json:"num_cards"`
-	Num_Lands    int       `json:"num_lands"`
-	Num_Creat    int       `json:"num_creat"`
-	Num_Spells   int       `json:"num_spells"`
-	Disable      int       `json:"disable"`
+	Name         string    //`json:"name"`
+	Colors       string    //`json:"colors"`
+	Date_Entered time.Time //`json:"date_entered"`
+	Favorite     int       //`json:"favorite"`
+	Max_Streak   int       //`json:"max_streak"`
+	Cur_Streak   int       //`json:"cur_streak"`
+	Num_Cards    int       //`json:"num_cards"`
+	Num_Lands    int       //`json:"num_lands"`
+	Num_Creat    int       //`json:"num_creat"`
+	Num_Spells   int       //`json:"num_spells"`
+	Num_Enchant  int
+	Num_Art      int
+	Disable      int //`json:"disable"`
 }
 type Game struct {
-	Results       int    `json:"results"`
-	Cause         string `json:"cause"`
-	Deck          string `json:"deck"`
-	Opponent      string `json:"opponent"`
-	Level         string `json:"level"`
-	CurrentStreak int    `json:"currentstreak"`
-	MaxStreak     int    `json:"maxstreak"`
-	GameType      string `json:"gametype"`
+	Results       int    //`json:"results"`
+	Cause         string //`json:"cause"`
+	Deck          string // `json:"deck"`
+	Opponent      string //`json:"opponent"`
+	Level         string //`json:"level"`
+	CurrentStreak int    //`json:"currentstreak"`
+	MaxStreak     int    //`json:"maxstreak"`
+	GameType      string //`json:"gametype"`
 }
 type Records struct {
-	Deck  string `json:"deck"`
-	Wins  int    `json:"wins"`
-	Loses int    `json:"loses"`
+	Deck  string //`json:"deck"`
+	Wins  int    // `json:"wins"`
+	Loses int    //`json:"loses"`
 }
 type Cards struct {
 	Cards []struct {
@@ -129,15 +131,15 @@ func menu() {
 	m["k8"] = fmt.Sprintf("%0s", "Win/Lose Percent")
 	m["k9"] = fmt.Sprintf("%-25s", "Analysis")
 	m["k10"] = fmt.Sprintf("%0s", "Favorites")
-	m["k11"] = fmt.Sprintf("%-24s", "Import Set Data")
+	m["k11"] = fmt.Sprintf("%-25s", "Import Set Data")
 	m["k12"] = fmt.Sprintf("%0s", "Quit")
 
 	// print menu options
-	fmt.Println("1:", m["k1"]+" 2:", m["k2"])
-	fmt.Println("3:", m["k3"]+" 4:", m["k4"])
-	fmt.Println("5:", m["k5"]+" 6:", m["k6"])
-	fmt.Println("7:", m["k7"]+" 8:", m["k8"])
-	fmt.Println("9:", m["k9"]+"10:", m["k10"])
+	fmt.Println(" 1:", m["k1"]+" 2:", m["k2"])
+	fmt.Println(" 3:", m["k3"]+" 4:", m["k4"])
+	fmt.Println(" 5:", m["k5"]+" 6:", m["k6"])
+	fmt.Println(" 7:", m["k7"]+" 8:", m["k8"])
+	fmt.Println(" 9:", m["k9"]+"10:", m["k10"])
 	fmt.Println("11:", m["k11"]+"12:", m["k12"])
 
 	in := bufio.NewScanner(os.Stdin)
@@ -365,18 +367,7 @@ func menu() {
 		deckgames = strings.TrimSuffix(deckgames, "\r\n")
 		gamecount(deckgames)
 	case 5:
-		//reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Would you like to see a specific deck details?(y/n)")
-		deckchoice, _ := reader.ReadString('\n')
-		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
-		deckchoice = validateuserinput(deckchoice, "confirm")
-		if deckchoice == "y" {
-			fmt.Println("Deck Name: ")
-			deckname, _ := reader.ReadString('\n')
-			viewdecks(deckname, 0)
-		} else {
-			viewdecks("n", 0)
-		}
+		viewdecks("n", 0)
 	case 6:
 		topten()
 	case 7:
@@ -446,9 +437,9 @@ func favmenu() {
 	m["k10"] = fmt.Sprintf("%-24s", "Return to Main Menu")
 	m["k11"] = fmt.Sprintf("%0s", "Quit")
 
-	fmt.Println("1:", m["k1"])
-	fmt.Println("2:", m["k2"])
-	fmt.Println("3:", m["k3"])
+	fmt.Println(" 1:", m["k1"])
+	fmt.Println(" 2:", m["k2"])
+	fmt.Println(" 3:", m["k3"])
 	fmt.Println("10:", m["k10"])
 	fmt.Println("11:", m["k11"])
 
@@ -639,38 +630,46 @@ func viewdecks(DeckName string, edit int) (ret string) {
 		DeckName = strings.TrimSuffix(DeckName, "\r\n")
 		//validate deck name
 		DeckName = validatedeck(DeckName)
-		results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mtga.decks WHERE name=?", DeckName)
+		results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, numenchant, numartifacts, disable FROM mtga.decks WHERE name=?", DeckName)
 		err := results.Scan(&d.Name, &d.Colors, &d.Date_Entered, &d.Favorite, &d.Max_Streak, &d.Cur_Streak,
-			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Disable)
+			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Num_Enchant, &d.Num_Art, &d.Disable)
 		if err != nil {
 			panic(err.Error())
-			//menu()
 		}
-		d.Name = fmt.Sprintf("%-25s", d.Name)
-		d.Colors = fmt.Sprintf("%-15s", d.Colors)
-		fdate := fmt.Sprintf("%-25s", d.Date_Entered.Format("2006-01-02 15:04:05"))
-		ffav := fmt.Sprintf("%-5s", strconv.Itoa(d.Favorite))
-		fmax := fmt.Sprintf("%-5s", strconv.Itoa(d.Max_Streak))
-		fcur := fmt.Sprintf("%-5s", strconv.Itoa(d.Cur_Streak))
-		fcard := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Cards))
-		fland := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Lands))
-		fspell := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Spells))
-		fcreat := fmt.Sprintf("%-5s", strconv.Itoa(d.Num_Creat))
-		fdis := d.Disable
+		m := make(map[string]string)
+		// Set key/value pairs using typical `name[key] = val`
+		m["k1"] = fmt.Sprintf("%-30s", d.Name)
+		m["k2"] = fmt.Sprintf("%-20s", d.Colors)
+		m["k3"] = fmt.Sprintf("%-25s", d.Date_Entered.Format("01-02-2006"))
+		m["k4"] = fmt.Sprintf("%-15s", strconv.Itoa(d.Favorite))
+		m["k5"] = fmt.Sprintf("%-24s", strconv.Itoa(d.Max_Streak))
+		m["k6"] = fmt.Sprintf("%-11s", strconv.Itoa(d.Cur_Streak))
+		m["k7"] = fmt.Sprintf("%-23s", strconv.Itoa(d.Num_Cards))
+		m["k8"] = fmt.Sprintf("%-14s", strconv.Itoa(d.Num_Lands))
+		m["k9"] = fmt.Sprintf("%-35s", strconv.Itoa(d.Num_Spells))
+		m["k10"] = fmt.Sprintf("%-7s", strconv.Itoa(d.Num_Enchant))
+		m["k11"] = fmt.Sprintf("%-23s", strconv.Itoa(d.Num_Art))
+		m["k12"] = fmt.Sprintf("%-19s", strconv.Itoa(d.Num_Creat))
 
+		fdis := d.Disable
 		var sdis string
 		if fdis == 0 {
 			sdis = "Yes"
-			//fmt.Println("yes")
 		} else {
 			sdis = "No"
-			//fmt.Println("No")
 		}
-		finalrecord := fmt.Sprint("Name: " + d.Name + "Color: " + d.Colors + "Date Entered: " + fdate + "Favorite: " +
-			ffav + "\n" + "Max Streak: " + fmax + "Current Streak: " + fcur + "\n" + "Number of Cards: " + fcard + "Number of Lands: " +
-			fland + "Number of Spells: " + fspell + "Number of Creatures: " + fcreat + "\n" + "Disabled: " + sdis + " \n")
-		log.SetFlags(0)
-		log.Println(finalrecord)
+		ffav := d.Favorite
+		var sfav string
+		if ffav == 0 {
+			sfav = "Yes"
+		} else {
+			sfav = "No"
+		}
+		// print deck details
+		fmt.Println("Name:", m["k1"]+"Color:", m["k2"]+"Date Entered:", m["k3"]+"Favorite:", sfav)
+		fmt.Println("Total Cards:", m["k7"]+"Total Lands:", m["k8"]+"Total Instant/Sorcery:", m["k9"])
+		fmt.Println("Total Creatures:", m["k12"]+"Total Enchantments:", m["k10"]+"Total Artifacts:", m["k11"])
+		fmt.Println("Max Streak:", m["k5"]+"Current Streak:", m["k6"]+"Disabled:", sdis)
 		ret = d.Name
 	} else {
 		results, err := db.Query("SELECT name, colors, date_entered, favorite, max_streak FROM mtga.decks ORDER BY favorite")
@@ -696,15 +695,16 @@ func viewdecks(DeckName string, edit int) (ret string) {
 			} else {
 				fav = fmt.Sprintf("%-4s", "No")
 			}
+
 			//format strings to be more readable
 			fcount := fmt.Sprintf("%2s: ", strconv.Itoa(count))
 			deck.Name = fmt.Sprintf("%-25s", deck.Name)
 			deck.Colors = fmt.Sprintf("%-15s", deck.Colors)
-			fdate := fmt.Sprintf("%-20s", deck.Date_Entered.Format("2006-01-02 15:04:05"))
+			fdate := fmt.Sprintf("%-15s", deck.Date_Entered.Format("2006-01-02"))
 			fmstreak := fmt.Sprintf("%-4s", strconv.Itoa(mstreak))
 
 			finalrecord := fmt.Sprint(fcount + deck.Name + " Colors: " + deck.Colors + " Date Entered: " + fdate +
-				" Favorite: " + fav + " Max Streak: " + fmstreak)
+				" Favorite: " + fav + "   Max Streak: " + fmstreak)
 			log.Println(finalrecord)
 		}
 	}
@@ -746,10 +746,6 @@ func topten() {
 		if ranking == 1 {
 			frank = "100"
 		}
-		//finalprint := fmt.Sprint(deckname + "   Win Percentage: " + fpct + "    Number of Wins: " + strconv.Itoa(count) +
-		//	"    Number of Games: " + strconv.Itoa(games))
-		//log.Println(finalprint)
-		// and then print out the tag's Name attribute
 		log.SetFlags(0)
 
 		//format strings to be more readable
@@ -775,9 +771,9 @@ func editdeck(d string) {
 	//create new deck structure variable
 	var deck Deck
 	d = strings.TrimSuffix(d, "\r\n")
-	results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, disable FROM mtga.decks WHERE name=?", d)
+	results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, numenchant, numartifacts, disable FROM mtga.decks WHERE name=?", d)
 	err := results.Scan(&deck.Name, &deck.Colors, &deck.Date_Entered, &deck.Favorite, &deck.Max_Streak, &deck.Cur_Streak,
-		&deck.Num_Cards, &deck.Num_Lands, &deck.Num_Spells, &deck.Num_Creat, &deck.Disable)
+		&deck.Num_Cards, &deck.Num_Lands, &deck.Num_Spells, &deck.Num_Creat, &deck.Num_Enchant, &deck.Num_Art, &deck.Disable)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -829,7 +825,7 @@ func editdeck(d string) {
 	case "current streak":
 		fmt.Println("Cannot change this field")
 		editdeck(d)
-	case "number of cards":
+	case "total cards":
 		fmt.Println("Original Total Number of Cards: " + strconv.Itoa(deck.Num_Cards))
 		fmt.Println("New Total Number of Cards: ")
 		reader := bufio.NewReader(os.Stdin)
@@ -838,7 +834,7 @@ func editdeck(d string) {
 		deck.Num_Cards, _ = strconv.Atoi(scards)
 		fmt.Println("Update Total Number of Cards: " + scards)
 		updatedeck(deck, deck.Name)
-	case "number of lands":
+	case "total lands":
 		fmt.Println("Original Total Number of Lands: " + strconv.Itoa(deck.Num_Lands))
 		fmt.Println("New Total Number of Lands: ")
 		reader := bufio.NewReader(os.Stdin)
@@ -847,23 +843,41 @@ func editdeck(d string) {
 		deck.Num_Lands, _ = strconv.Atoi(slands)
 		fmt.Println("Update Total Number of Lands: " + slands)
 		updatedeck(deck, deck.Name)
-	case "number of spells":
-		fmt.Println("Original Total Number of Instant/Sorcery/Enchantment: " + strconv.Itoa(deck.Num_Spells))
-		fmt.Println("New Total Number of Instant/Sorcery/Enchantment: ")
+	case "total instant/sorcery":
+		fmt.Println("Original Total Number of Instant/Sorcery: " + strconv.Itoa(deck.Num_Spells))
+		fmt.Println("New Total Number of Instant/Sorcery: ")
 		reader := bufio.NewReader(os.Stdin)
 		sspells, _ := reader.ReadString('\n')
 		sspells = strings.TrimSuffix(sspells, "\r\n")
 		deck.Num_Spells, _ = strconv.Atoi(sspells)
-		fmt.Println("Update Total Number of Instant/Sorcery/Enchantment: " + sspells)
+		fmt.Println("Update Total Number of Instant/Sorcery: " + sspells)
 		updatedeck(deck, deck.Name)
-	case "number of creatures":
-		fmt.Println("Original Total Number of creatures: " + strconv.Itoa(deck.Num_Creat))
-		fmt.Println("New Total Number of creatures: ")
+	case "total creatures":
+		fmt.Println("Original Total Number of Creatures: " + strconv.Itoa(deck.Num_Creat))
+		fmt.Println("New Total Number of Creatures: ")
 		reader := bufio.NewReader(os.Stdin)
 		screat, _ := reader.ReadString('\n')
 		screat = strings.TrimSuffix(screat, "\r\n")
 		deck.Num_Creat, _ = strconv.Atoi(screat)
-		fmt.Println("Update Total Number of creatures: " + screat)
+		fmt.Println("Update Total Number of Creatures: " + screat)
+		updatedeck(deck, deck.Name)
+	case "total enchantments":
+		fmt.Println("Original Total Number of Enchantments: " + strconv.Itoa(deck.Num_Enchant))
+		fmt.Println("New Total Number of Enchantments: ")
+		reader := bufio.NewReader(os.Stdin)
+		senchant, _ := reader.ReadString('\n')
+		senchant = strings.TrimSuffix(senchant, "\r\n")
+		deck.Num_Enchant, _ = strconv.Atoi(senchant)
+		fmt.Println("Update Total Number of Enchantments: " + senchant)
+		updatedeck(deck, deck.Name)
+	case "total artifacts":
+		fmt.Println("Original Total Number of Artifacts: " + strconv.Itoa(deck.Num_Art))
+		fmt.Println("New Total Number of Artifacts: ")
+		reader := bufio.NewReader(os.Stdin)
+		sart, _ := reader.ReadString('\n')
+		sart = strings.TrimSuffix(sart, "\r\n")
+		deck.Num_Art, _ = strconv.Atoi(sart)
+		fmt.Println("Update Total Number of Enchantments: " + sart)
 		updatedeck(deck, deck.Name)
 	case "disabled":
 		fmt.Println("Do You Want this Deck Disabled(y/n): ")
@@ -893,8 +907,8 @@ func updatedeck(d Deck, oname string) {
 	defer db.Close()
 
 	// perform a db.Query insert
-	result, err := db.Exec("UPDATE mtga.decks SET name=?, colors=?, favorite=?, numcards=?, numlands=?, numspells=?, numcreatures=?,disable=? WHERE name=?",
-		d.Name, d.Colors, d.Favorite, d.Num_Cards, d.Num_Lands, d.Num_Spells, d.Num_Creat, d.Disable, oname)
+	result, err := db.Exec("UPDATE mtga.decks SET name=?, colors=?, favorite=?, numcards=?, numlands=?, numspells=?, numcreatures=?, numenchant=?, numartifacts=?, disable=? WHERE name=?",
+		d.Name, d.Colors, d.Favorite, d.Num_Cards, d.Num_Lands, d.Num_Spells, d.Num_Creat, d.Num_Enchant, d.Num_Art, d.Disable, oname)
 
 	rows, _ := result.RowsAffected()
 
@@ -1211,7 +1225,8 @@ func favs(action string, assign string) {
 			//format strings to be more readable
 			deck = fmt.Sprintf("%-25s", deck)
 			fdate := fmt.Sprintf("%-20s", date_entered.Format("2006-01-02"))
-			finalrecord := fmt.Sprint("Deck: " + deck + " Date Entered: " + fdate + " Wins: " + strconv.Itoa(wins) + " Loses: " + strconv.Itoa(loses))
+			fwins := fmt.Sprintf("%-10s", strconv.Itoa(wins))
+			finalrecord := fmt.Sprint("Deck: " + deck + " Date Entered: " + fdate + " Wins: " + fwins + " Loses: " + strconv.Itoa(loses))
 			log.Println(finalrecord)
 		}
 	case "reset":
