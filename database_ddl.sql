@@ -2,7 +2,7 @@ CREATE DATABASE `mtga` /*!40100 DEFAULT CHARACTER SET latin1 */;
 
 -- mtga.decks definition
 
-CREATE TABLE `mtga`.`decks` (
+CREATE TABLE `decks` (
   `name` varchar(100) NOT NULL,
   `colors` varchar(100) DEFAULT NULL,
   `date_entered` date NOT NULL DEFAULT curdate(),
@@ -14,12 +14,14 @@ CREATE TABLE `mtga`.`decks` (
   `numspells` int(11) DEFAULT 0,
   `numcreatures` int(11) DEFAULT 0,
   `disable` binary(1) NOT NULL DEFAULT '1',
+  `numenchant` int(11) DEFAULT 0,
+  `numartifacts` int(11) DEFAULT 0,
   PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- mtga.games definition
 
-CREATE TABLE `games` (
+CREATE TABLE `mtga`.`games` (
   `UID` bigint(20) NOT NULL DEFAULT uuid_short(),
   `Timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
   `results` binary(1) DEFAULT '0',
@@ -45,13 +47,14 @@ CREATE TABLE `mtga`.`decks_deleted` (
   `numspells` int(11) DEFAULT 0,
   `numcreatures` int(11) DEFAULT 0,
   `disable` binary(1) NOT NULL DEFAULT '1',
-  `UID` bigint(20) NOT NULL DEFAULT uuid_short(),
-  PRIMARY KEY (`UID`)
+  `numenchant` int(11) DEFAULT 0,
+  `numartifacts` int(11) DEFAULT 0,
+  PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- mtga.cards definition
 
-CREATE TABLE `cards` (
+CREATE TABLE `mtga`.`cards` (
   `deck` varchar(100) DEFAULT NULL,
   `numcopy` int(11) DEFAULT NULL,
   `cardname` varchar(100) DEFAULT NULL,
@@ -62,7 +65,7 @@ CREATE TABLE `cards` (
 
 -- mtga.set_abbreviations definition
 
-CREATE TABLE `set_abbreviations` (
+CREATE TABLE `mtga`.`set_abbreviations` (
   `set_name` varchar(100) DEFAULT NULL,
   `set_abbrev` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -71,19 +74,21 @@ CREATE TABLE `set_abbreviations` (
 
 CREATE TABLE `sets` (
   `set_name` varchar(100) NOT NULL,
-  `card_name` varchar(100) DEFAULT NULL,
+  `card_name` varchar(1000) DEFAULT NULL,
   `colors` varchar(100) DEFAULT NULL,
   `mana_cost` decimal(10,0) DEFAULT NULL,
   `mana_colors` varchar(100) DEFAULT NULL,
   `converted_mana_cost` decimal(10,0) DEFAULT NULL,
-  `set_number` int(11) DEFAULT NULL,
-  `card_text` text DEFAULT NULL,
+  `set_number` varchar(100) DEFAULT NULL,
+  `card_text` mediumtext DEFAULT NULL,
   `type` varchar(100) DEFAULT NULL,
   `sub_type` varchar(100) DEFAULT NULL,
   `super_type` varchar(100) DEFAULT NULL,
   `types` varchar(100) DEFAULT NULL,
-  `rarity` varchar(100) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `rarity` varchar(100) DEFAULT NULL,
+  `set_code` varchar(100) DEFAULT NULL,
+  `card_side` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 -- mtga.game_count source
 
@@ -116,13 +121,17 @@ create or replace
 algorithm = UNDEFINED view `mtga`.`topten` as
 select
     `r`.`deck` as `deck`,
+    (`r`.`wins` + 1) / (2 + sum(`r`.`wins` + `r`.`loses`)) as `ranking`,
     `r`.`wins` as `wins`,
     `r`.`loses` as `loses`
 from
     `mtga`.`record` `r`
+group by
+    `r`.`deck`
 order by
+    (`r`.`wins` + 1) / (2 + sum(`r`.`wins` + `r`.`loses`)) desc,
     `r`.`wins` desc,
-    `r`.`loses` desc
+    `r`.`loses`
 limit 10;
 
 -- mtga.lose_percentage source
