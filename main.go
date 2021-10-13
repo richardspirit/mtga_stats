@@ -123,7 +123,7 @@ func menu() {
 	m["k5"] = fmt.Sprintf("%-25s", "View Decks")
 	m["k6"] = fmt.Sprintf("%0s", "Top Ten Decks")
 	m["k7"] = fmt.Sprintf("%-25s", "Deck Details")
-	m["k8"] = fmt.Sprintf("%0s", "Win/Lose Percent")
+	m["k8"] = fmt.Sprintf("%0s", "Win Percent")
 	m["k9"] = fmt.Sprintf("%-25s", "Analysis")
 	m["k10"] = fmt.Sprintf("%0s", "Favorites")
 	m["k11"] = fmt.Sprintf("%-25s", "Import Set Data")
@@ -145,13 +145,14 @@ func menu() {
 	case 1:
 		fmt.Println("Enter or Import Deck: ")
 		edchoice, _ := reader.ReadString('\n')
-		edchoice = strings.TrimSuffix(strings.TrimSuffix(edchoice, "\n"), "\r")
-		//edchoice = strings.TrimSuffix(edchoice, "\n")
+		//edchoice = strings.TrimSuffix(strings.TrimSuffix(edchoice, "\n"), "\r")
+		edchoice = strings.TrimSpace(edchoice)
 		//validate user input
 		edchoice = validateuserinput(edchoice, "choice")
 		fmt.Println("Deck Name: ")
 		name, _ := reader.ReadString('\n')
-		name = strings.TrimSuffix(name, "\n")
+		//name = strings.TrimSuffix(strings.TrimSuffix(name, "\n"), "\r")
+		name = strings.TrimSpace(name)
 		fmt.Println("Deck Name: " + name)
 		fmt.Println("Multi-Colored Deck(y/n)")
 		multi, _ := reader.ReadString('\n')
@@ -162,11 +163,13 @@ func menu() {
 		if multi == "y" {
 			fmt.Println("How many colors?")
 			num_col, _ := reader.ReadString('\n')
-			num_col = strings.TrimSuffix(num_col, "\r\n")
-			fmt.Println("You deck has " + num_col + " of colors")
+			//num_col = strings.TrimSuffix(strings.TrimSuffix(num_col, "\r"), "\n")
+			num_col = strings.TrimSpace(num_col)
+			fmt.Println("You deck has " + num_col + " colors")
 			fmt.Println("what is your first color?(Black|White|Blue|Red|Green)")
 			cols, _ := reader.ReadString('\n')
-			cols = strings.TrimSuffix(cols, "\r\n")
+			//cols = strings.TrimSuffix(strings.TrimSuffix(cols, "\r"), "\n")
+			cols = strings.TrimSpace(cols)
 			//validate user input
 			cols = validateuserinput(cols, "colors")
 			count := 1
@@ -175,7 +178,8 @@ func menu() {
 				count++
 				fmt.Println("Next Color(Black|White|Blue|Red|Green): ")
 				ncol, _ := reader.ReadString('\n')
-				ncol = strings.TrimSuffix(ncol, "\r\n")
+				//ncol = strings.TrimSuffix(strings.TrimSuffix(ncol, "\r"), "\n")
+				ncol = strings.TrimSpace(ncol)
 				validateuserinput(ncol, "colors")
 				cols = cols + "," + ncol
 			}
@@ -183,12 +187,14 @@ func menu() {
 		} else if multi == "n" {
 			fmt.Println("What color is your deck?(Black|White|Blue|Red|Green)")
 			color, _ = reader.ReadString('\n')
-			color = strings.TrimSuffix(color, "\r\n")
+			//color = strings.TrimSuffix(strings.TrimSuffix(color, "\r"), "\n")
+			color = strings.TrimSpace(color)
 			validateuserinput(color, "colors")
 		}
 		fmt.Println("Favorite(y/n): ")
 		favorite, _ := reader.ReadString('\n')
-		favorite = strings.TrimSuffix(favorite, "\r\n")
+		//favorite = strings.TrimSuffix(strings.TrimSuffix(favorite, "\r"), "\n")
+		favorite = strings.TrimSpace(favorite)
 		//validate user input
 		validateuserinput(favorite, "confirm")
 		fmt.Println("Your new deck " + name + " is a favorite: " + favorite)
@@ -203,7 +209,8 @@ func menu() {
 		if edchoice == "import" || edchoice == "Import" {
 			fmt.Println("Sync to Existing Deck(y/n)")
 			syncd, _ := reader.ReadString('\n')
-			syncd = strings.TrimSuffix(syncd, "\n")
+			//syncd = strings.TrimSuffix(strings.TrimSuffix(syncd, "\r"), "\n")
+			syncd = strings.TrimSpace(syncd)
 			fmt.Println("Import Option")
 			d := Deck{
 				Name:         name,
@@ -215,25 +222,29 @@ func menu() {
 		} else if edchoice == "enter" || edchoice == "Enter" {
 			fmt.Println("Total Number of cards: ")
 			numcards, _ := reader.ReadString('\n')
-			numcards = strings.TrimSuffix(numcards, "\r\n")
+			//numcards = strings.TrimSuffix(strings.TrimSuffix(numcards, "\r"), "\n")
+			numcards = strings.TrimSpace(numcards)
 			icards := new(int)
 			*icards, _ = strconv.Atoi(numcards)
 			fmt.Print("Total number of cards: " + numcards + "\n")
 			fmt.Println("Total number of instant/sorcery/enchantment: ")
 			numspells, _ := reader.ReadString('\n')
-			numspells = strings.TrimSuffix(numspells, "\r\n")
+			//numspells = strings.TrimSuffix(strings.TrimSuffix(numspells, "\r"), "\n")
+			numspells = strings.TrimSpace(numspells)
 			ispells := new(int)
 			*ispells, _ = strconv.Atoi(numspells)
 			fmt.Print("Total number of instant/sorcery/enchantment: " + numspells + "\n")
 			fmt.Println("Total number of creatures: ")
 			numcreatures, _ := reader.ReadString('\n')
-			numcreatures = strings.TrimSuffix(numcreatures, "\r\n")
+			//numcreatures = strings.TrimSuffix(strings.TrimSuffix(numcreatures, "\r"), "\n")
+			numcreatures = strings.TrimSpace(numcreatures)
 			icreatures := new(int)
 			*icreatures, _ = strconv.Atoi(numcreatures)
 			fmt.Print("Total number of creatures: " + numcreatures + "\n")
 			fmt.Println("Total number of lands: ")
 			numlands, _ := reader.ReadString('\n')
-			numlands = strings.TrimSuffix(numlands, "\r\n")
+			//numlands = strings.TrimSuffix(strings.TrimSuffix(numlands, "\r"), "\n")
+			numlands = strings.TrimSpace(numlands)
 			ilands := new(int)
 			*ilands, _ = strconv.Atoi((numlands))
 			fmt.Print("Total number of lands: " + numlands + "\n")
@@ -256,70 +267,47 @@ func menu() {
 			}
 		}
 	case 2:
-		//reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Results(won/lost): ")
 		results, _ := reader.ReadString('\n')
-		results = strings.TrimSuffix(results, "\r\n")
+		//results = strings.TrimSuffix(strings.TrimSuffix(results, "\r"), "\n")
+		results = strings.TrimSpace(results)
 		//validate results input
 		results = validateuserinput(results, "results")
 		fmt.Print("You " + results + " this game.\n")
 		fmt.Println("Why do you think you " + results + " this game?")
 		cause, _ := reader.ReadString('\n')
-		cause = strings.TrimSuffix(cause, "\r\n")
+		//cause = strings.TrimSuffix(strings.TrimSuffix(cause, "\r"), "\n")
+		cause = strings.TrimSpace(cause)
 		fmt.Println("Cause: " + cause)
 		fmt.Println("Deck Name:")
 		deck, _ := reader.ReadString('\n')
-		deck = strings.TrimSuffix(deck, "\r\n")
+		//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
+		deck = strings.TrimSpace(deck)
 		//validate deck name
 		deck = validatedeck(deck)
 		fmt.Println("You " + results + " your game using " + deck)
 		fmt.Println("Opponent Name:?")
 		opp, _ := reader.ReadString('\n')
-		opp = strings.TrimSuffix(opp, "\r\n")
+		//opp = strings.TrimSuffix(strings.TrimSuffix(opp, "\r"), "\n")
+		opp = strings.TrimSpace(opp)
 		fmt.Println("Opponent Name: " + opp)
 		fmt.Println("Game Level:(Bronze, Silver, Gold, Platinum, Diamond, and Mythic)")
 		lev, _ := reader.ReadString('\n')
-		lev = strings.TrimSuffix(lev, "\r\n")
+		//lev = strings.TrimSuffix(strings.TrimSuffix(lev, "\r"), "\n")
+		lev = strings.TrimSpace(lev)
 		//validate level input
 		lev = validateuserinput(lev, "level")
 		fmt.Println("Game Tier:(1-4)")
 		tier, _ := reader.ReadString('\n')
-		tier = strings.TrimSuffix(tier, "\r\n")
+		//tier = strings.TrimSuffix(strings.TrimSuffix(tier, "\r"), "\n")
+		tier = strings.TrimSpace(tier)
 		//validate tier input
 		tier = validateuserinput(tier, "tier")
 		fmt.Println("Game Level: " + lev + " Tier: " + tier)
 		cmblvl := lev + "-" + tier
 		//set game type
 		fmt.Println("Game Type:")
-		fmt.Println("Play(p), Brawl(b), Standard Ranked(sr), Traditional Standard Play(tsp), Traditional Standard Ranked(tsr),")
-		fmt.Println("Traditional Historic Ranked(thr), Historic Ranked(hr), Historic Brawl(hb), Bot, Event(e)")
-		gametype, _ := reader.ReadString('\n')
-		gametype = strings.TrimSuffix(gametype, "\r\n")
-		gametype = validateuserinput(gametype, "gametype")
-		switch gametype {
-		case "p":
-			gametype = "Play"
-		case "b":
-			gametype = "Brawl"
-		case "sr":
-			gametype = "Standard Ranked"
-		case "tsp":
-			gametype = "Traditional Standard Play"
-		case "tsr":
-			gametype = "Traditional Standard Ranked"
-		case "thr":
-			gametype = "Traditional Historic Ranked"
-		case "hr":
-			gametype = "Historic Ranked"
-		case "hb":
-			gametype = "Historic Brawl"
-		case "Bot":
-			gametype = "Bot"
-		case "e":
-			fmt.Println("Event Name:")
-			in.Scan()
-			gametype = in.Text()
-		}
+		gametype := gametype()
 		fmt.Println("Game Type: " + gametype)
 		//convert string to int
 		results_bin := new(int)
@@ -346,11 +334,13 @@ func menu() {
 	case 3:
 		fmt.Println("Would you like to narrow your search?(y/n)")
 		deckchoice, _ := reader.ReadString('\n')
-		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
+		//deckchoice = strings.TrimSuffix(strings.TrimSuffix(deckchoice, "\r"), "\n")
+		deckchoice = strings.TrimSpace(deckchoice)
 		validateuserinput(deckchoice, "confirm")
 		if deckchoice == "y" {
 			fmt.Println("Deck Name: ")
 			deckname, _ := reader.ReadString('\n')
+			deckname = strings.TrimSpace(deckname)
 			drank(deckname)
 		} else {
 			drank("n")
@@ -358,12 +348,14 @@ func menu() {
 	case 4:
 		fmt.Println("Would you like to narrow your search?(y/n)")
 		deckchoice, _ := reader.ReadString('\n')
-		deckchoice = strings.TrimSuffix(deckchoice, "\r\n")
+		//deckchoice = strings.TrimSuffix(strings.TrimSuffix(deckchoice, "\r"), "\n")
+		deckchoice = strings.TrimSpace(deckchoice)
 		validateuserinput(deckchoice, "confirm")
 		if deckchoice == "y" {
 			fmt.Println("Deck Name: ")
 			deckname, _ := reader.ReadString('\n')
-			deckname = strings.TrimSuffix(deckname, "\r\n")
+			//deckname = strings.TrimSuffix(strings.TrimSuffix(deckname, "\r"), "\n")
+			deckname = strings.TrimSpace(deckname)
 			gamecount(deckname)
 		} else {
 			gamecount("n")
@@ -375,18 +367,21 @@ func menu() {
 	case 7:
 		fmt.Println("View/Edit/Delete Deck: ")
 		edchoice, _ := reader.ReadString('\n')
-		edchoice = strings.TrimSuffix(edchoice, "\r\n")
+		edchoice = strings.TrimSuffix(strings.TrimSuffix(edchoice, "\r"), "\n")
+		edchoice = strings.TrimSpace(edchoice)
 		fmt.Println("Deck:")
 		deck, _ := reader.ReadString('\n')
+		//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
+		deck = strings.TrimSpace(deck)
 		//validate user input
 		validateuserinput(edchoice, "edit")
 		if edchoice == "delete" || edchoice == "Delete" {
-			deck = strings.TrimSuffix(deck, "\r\n")
 			fmt.Println("Delete Deck: " + deck)
 			viewdecks(deck, 1)
 			fmt.Println("Confirm(y/n): ")
 			confirm, _ := reader.ReadString('\n')
-			confirm = strings.TrimSuffix(confirm, "\r\n")
+			//confirm = strings.TrimSuffix(strings.TrimSuffix(confirm, "\r"), "\n")
+			confirm = strings.TrimSpace(confirm)
 			//validate confirmation entry
 			confirm = validateuserinput(confirm, "confirm")
 
@@ -404,12 +399,14 @@ func menu() {
 	case 8:
 		fmt.Println("Specify Deck(y/n)")
 		choice, _ := reader.ReadString('\n')
-		choice = strings.TrimSuffix(choice, "\r\n")
+		//choice = strings.TrimSuffix(strings.TrimSuffix(choice, "\r"), "\n")
+		choice = strings.TrimSpace(choice)
 		choice = validateuserinput(choice, "confirm")
 		if choice == "y" {
 			fmt.Println("Deck: ")
 			deck, _ := reader.ReadString('\n')
-			deck = strings.TrimSuffix(deck, "\r\n")
+			//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
+			deck = strings.TrimSpace(deck)
 			deck = validatedeck(deck)
 			pctvals(deck)
 		} else {
@@ -431,7 +428,7 @@ func menu() {
 	}
 }
 func favmenu() {
-	fmt.Println("mtga Stats")
+	fmt.Println("Favorites")
 	m := make(map[string]string)
 
 	// Set key/value pairs using typical `name[key] = val`
@@ -464,6 +461,61 @@ func favmenu() {
 		os.Exit(0)
 	}
 }
+func gametype() (typereturn string) {
+	m := make(map[string]string)
+
+	// Set key/value pairs using typical `name[key] = val`
+	m["k1"] = fmt.Sprintf("%-30s", "Play")
+	m["k2"] = fmt.Sprintf("%0s", "Brawl")
+	m["k3"] = fmt.Sprintf("%-30s", "Standard Ranked")
+	m["k4"] = fmt.Sprintf("%0s", "Traditional Standard Play")
+	m["k5"] = fmt.Sprintf("%-30s", "Traditional Standard Ranked")
+	m["k6"] = fmt.Sprintf("%0s", "Traditional Historic Ranked")
+	m["k7"] = fmt.Sprintf("%-30s", "Historic Ranked")
+	m["k8"] = fmt.Sprintf("%0s", "Historic Brawl")
+	m["k9"] = fmt.Sprintf("%-30s", "Bot")
+	m["k10"] = fmt.Sprintf("%0s", "Event")
+
+	fmt.Println("1:", m["k1"], " 2:", m["k2"])
+	fmt.Println("3:", m["k3"], " 4:", m["k4"])
+	fmt.Println("5:", m["k5"], " 6:", m["k6"])
+	fmt.Println("7:", m["k7"], " 8:", m["k8"])
+	fmt.Println("9:", m["k9"], "10:", m["k10"])
+
+	in := bufio.NewScanner(os.Stdin)
+	in.Scan()
+	choice, _ := strconv.Atoi(in.Text())
+
+	switch choice {
+	case 1:
+		typereturn = "Play"
+	case 2:
+		typereturn = "Brawl"
+	case 3:
+		typereturn = "Standard Ranked"
+	case 4:
+		typereturn = "Traditional Standard Play"
+	case 5:
+		typereturn = "Traditional Standard Ranked"
+	case 6:
+		typereturn = "Traditional Historic Ranked"
+	case 7:
+		typereturn = "Historic Ranked"
+	case 8:
+		typereturn = "Historic Brawl"
+	case 9:
+		typereturn = "Bot"
+	case 10:
+		fmt.Println("Event Name:")
+		in.Scan()
+		typereturn = in.Text()
+		typereturn = strings.TrimSpace(typereturn)
+	default:
+		println("Invalid Entry")
+		gametype()
+	}
+	return typereturn
+}
 func opendb() *sql.DB {
 	db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/mtga?parseTime=true")
 	// if there is an error opening the connection, handle it
@@ -479,7 +531,7 @@ func newdeck(d Deck) error {
 	// defer the close till after the main function has finished
 	// executing
 	defer db.Close()
-
+	d.Name = strings.TrimSpace(d.Name)
 	// perform a db.Query insert
 	query := "INSERT INTO mtga.decks(name, colors, favorite, numcards, numlands, numspells, numcreatures) VALUES (?, ?, ?, ?, ?, ?, ?)"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
@@ -555,7 +607,7 @@ func drank(DeckName string) error {
 	)
 
 	if DeckName != "n" {
-		DeckName = strings.TrimSuffix(DeckName, "\r\n")
+		DeckName = strings.TrimSuffix(strings.TrimSuffix(DeckName, "\r"), "\n")
 		DeckName = validatedeck(DeckName)
 
 		// Execute the query
@@ -623,7 +675,7 @@ func gamecount(d string) {
 
 		results := db.QueryRow("SELECT deck, results AS Count FROM mtga.game_count WHERE deck=?", d)
 		err := results.Scan(&deckname, &count)
-		fmt.Println("testing: " + deckname)
+
 		if err != nil {
 			panic(err.Error())
 		}
@@ -658,7 +710,7 @@ func viewdecks(DeckName string, edit int) (ret string) {
 	defer db.Close()
 	if DeckName != "n" {
 		var d Deck
-		DeckName = strings.TrimSuffix(DeckName, "\r\n")
+		DeckName = strings.TrimSuffix(strings.TrimSuffix(DeckName, "\r"), "\n")
 		//validate deck name
 		DeckName = validatedeck(DeckName)
 		results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, numenchant, numartifacts, disable FROM mtga.decks WHERE name=?", DeckName)
@@ -717,6 +769,7 @@ func viewdecks(DeckName string, edit int) (ret string) {
 			if err != nil {
 				panic(err.Error()) // proper error handling instead of panic in your app
 			}
+
 			// and then print out the tag's Name attribute
 			log.SetFlags(0)
 			mstreak := deck.Max_Streak
@@ -733,7 +786,6 @@ func viewdecks(DeckName string, edit int) (ret string) {
 			deck.Colors = fmt.Sprintf("%-15s", deck.Colors)
 			fdate := fmt.Sprintf("%-15s", deck.Date_Entered.Format("2006-01-02"))
 			fmstreak := fmt.Sprintf("%-4s", strconv.Itoa(mstreak))
-
 			finalrecord := fmt.Sprint(fcount + deck.Name + " Colors: " + deck.Colors + " Date Entered: " + fdate +
 				" Favorite: " + fav + "   Max Streak: " + fmstreak)
 			log.Println(finalrecord)
@@ -752,23 +804,22 @@ func topten() {
 	// executing
 	defer db.Close()
 
-	results, err := db.Query("SELECT ROW_NUMBER() OVER() AS num_row, deck, ranking, wins, loses FROM mtga.topten")
+	results, err := db.Query("SELECT deck, ranking, wins, loses FROM mtga.topten")
 
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
-
+	var num int
 	for results.Next() {
 		var (
 			name    string
 			wins    int
 			loses   int
 			ranking float64
-			num     int
 		)
-
+		num++
 		// for each row, scan the result into our deck composite object
-		err = results.Scan(&num, &name, &ranking, &wins, &loses)
+		err = results.Scan(&name, &ranking, &wins, &loses)
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
@@ -786,7 +837,9 @@ func topten() {
 		fwins := fmt.Sprintf("%-5s", strconv.Itoa(wins))
 		floses := fmt.Sprintf("%-5s", strconv.Itoa(loses))
 		fnum := fmt.Sprintf("%1s", strconv.Itoa(num))
-
+		if num != 10 {
+			fnum = fmt.Sprintf("%2s", strconv.Itoa(num))
+		}
 		finalrecord := fmt.Sprint(fnum + ": " + name + "Ranking: " + frank + " Wins: " + fwins + " Loses: " + floses)
 		log.Println(finalrecord)
 	}
@@ -796,14 +849,12 @@ func topten() {
 func editdeck(d string) {
 	// Open up our database connection.
 	db := opendb()
-	// defer the close till after the main function has finished
-	// executing
 	defer db.Close()
 	//show current deck attributes
 	d = viewdecks(d, 1)
 	//create new deck structure variable
 	var deck Deck
-	d = strings.TrimSuffix(d, "\r\n")
+	d = strings.TrimSuffix(strings.TrimSuffix(d, "\r"), "\n")
 	results := db.QueryRow("SELECT name, colors, date_entered, favorite, max_streak, cur_streak, numcards, numlands, numspells, numcreatures, numenchant, numartifacts, disable FROM mtga.decks WHERE name=?", d)
 	err := results.Scan(&deck.Name, &deck.Colors, &deck.Date_Entered, &deck.Favorite, &deck.Max_Streak, &deck.Cur_Streak,
 		&deck.Num_Cards, &deck.Num_Lands, &deck.Num_Spells, &deck.Num_Creat, &deck.Num_Enchant, &deck.Num_Art, &deck.Disable)
@@ -815,7 +866,8 @@ func editdeck(d string) {
 	fmt.Println("Enter section you would like to edit or finish to return to main menu")
 	editchoice, _ := reader.ReadString('\n')
 	fmt.Println("Edit Section: " + editchoice)
-	editchoice = strings.TrimSuffix(editchoice, "\r\n")
+	//editchoice = strings.TrimSuffix(strings.TrimSuffix(editchoice, "\r"), "\n")
+	editchoice = strings.TrimSpace(editchoice)
 
 	switch editchoice {
 	case "name":
@@ -826,7 +878,8 @@ func editdeck(d string) {
 		reader := bufio.NewReader(os.Stdin)
 		deck.Name, _ = reader.ReadString('\n')
 		fmt.Println("Update Name: " + deck.Name)
-		deck.Name = strings.TrimSuffix(deck.Name, "\r\n")
+		//deck.Name = strings.TrimSuffix(strings.TrimSuffix(deck.Name, "\r"), "\n")
+		deck.Name = strings.TrimSpace(deck.Name)
 		updatedeck(deck, oname)
 	case "color":
 		fmt.Println("Original Color: " + deck.Colors)
@@ -834,7 +887,8 @@ func editdeck(d string) {
 		reader := bufio.NewReader(os.Stdin)
 		deck.Colors, _ = reader.ReadString('\n')
 		fmt.Println("Update Colors: " + deck.Colors)
-		deck.Colors = strings.TrimSuffix(deck.Colors, "\r\n")
+		//deck.Colors = strings.TrimSuffix(strings.TrimSuffix(deck.Colors, "\r"), "\n")
+		deck.Colors = strings.TrimSpace(deck.Colors)
 		updatedeck(deck, deck.Name)
 	case "date entered":
 		fmt.Println("Cannot change this field.")
@@ -843,7 +897,8 @@ func editdeck(d string) {
 		fmt.Println("Is This Deck a Favorite(y/n): ")
 		reader := bufio.NewReader(os.Stdin)
 		sfav, _ := reader.ReadString('\n')
-		sfav = strings.TrimSuffix(sfav, "\r\n")
+		//sfav = strings.TrimSuffix(strings.TrimSuffix(sfav, "\r"), "\n")
+		sfav = strings.TrimSpace(sfav)
 		if sfav == "y" {
 			deck.Favorite = 0
 		} else {
@@ -863,7 +918,8 @@ func editdeck(d string) {
 		fmt.Println("New Total Number of Cards: ")
 		reader := bufio.NewReader(os.Stdin)
 		scards, _ := reader.ReadString('\n')
-		scards = strings.TrimSuffix(scards, "\r\n")
+		//scards = strings.TrimSuffix(strings.TrimSuffix(scards, "\r"), "\n")
+		scards = strings.TrimSpace(scards)
 		deck.Num_Cards, _ = strconv.Atoi(scards)
 		fmt.Println("Update Total Number of Cards: " + scards)
 		updatedeck(deck, deck.Name)
@@ -872,7 +928,8 @@ func editdeck(d string) {
 		fmt.Println("New Total Number of Lands: ")
 		reader := bufio.NewReader(os.Stdin)
 		slands, _ := reader.ReadString('\n')
-		slands = strings.TrimSuffix(slands, "\r\n")
+		//slands = strings.TrimSuffix(strings.TrimSuffix(slands, "\r"), "\n")
+		slands = strings.TrimSpace(slands)
 		deck.Num_Lands, _ = strconv.Atoi(slands)
 		fmt.Println("Update Total Number of Lands: " + slands)
 		updatedeck(deck, deck.Name)
@@ -881,7 +938,8 @@ func editdeck(d string) {
 		fmt.Println("New Total Number of Instant/Sorcery: ")
 		reader := bufio.NewReader(os.Stdin)
 		sspells, _ := reader.ReadString('\n')
-		sspells = strings.TrimSuffix(sspells, "\r\n")
+		//sspells = strings.TrimSuffix(strings.TrimSuffix(sspells, "\r"), "\n")
+		sspells = strings.TrimSpace(sspells)
 		deck.Num_Spells, _ = strconv.Atoi(sspells)
 		fmt.Println("Update Total Number of Instant/Sorcery: " + sspells)
 		updatedeck(deck, deck.Name)
@@ -890,7 +948,8 @@ func editdeck(d string) {
 		fmt.Println("New Total Number of Creatures: ")
 		reader := bufio.NewReader(os.Stdin)
 		screat, _ := reader.ReadString('\n')
-		screat = strings.TrimSuffix(screat, "\r\n")
+		//screat = strings.TrimSuffix(strings.TrimSuffix(screat, "\r"), "\n")
+		screat = strings.TrimSpace(screat)
 		deck.Num_Creat, _ = strconv.Atoi(screat)
 		fmt.Println("Update Total Number of Creatures: " + screat)
 		updatedeck(deck, deck.Name)
@@ -899,7 +958,8 @@ func editdeck(d string) {
 		fmt.Println("New Total Number of Enchantments: ")
 		reader := bufio.NewReader(os.Stdin)
 		senchant, _ := reader.ReadString('\n')
-		senchant = strings.TrimSuffix(senchant, "\r\n")
+		//senchant = strings.TrimSuffix(strings.TrimSuffix(senchant, "\r"), "\n")
+		senchant = strings.TrimSpace(senchant)
 		deck.Num_Enchant, _ = strconv.Atoi(senchant)
 		fmt.Println("Update Total Number of Enchantments: " + senchant)
 		updatedeck(deck, deck.Name)
@@ -908,7 +968,8 @@ func editdeck(d string) {
 		fmt.Println("New Total Number of Artifacts: ")
 		reader := bufio.NewReader(os.Stdin)
 		sart, _ := reader.ReadString('\n')
-		sart = strings.TrimSuffix(sart, "\r\n")
+		//sart = strings.TrimSuffix(strings.TrimSuffix(sart, "\r"), "\n")
+		sart = strings.TrimSpace(sart)
 		deck.Num_Art, _ = strconv.Atoi(sart)
 		fmt.Println("Update Total Number of Enchantments: " + sart)
 		updatedeck(deck, deck.Name)
@@ -916,7 +977,8 @@ func editdeck(d string) {
 		fmt.Println("Do You Want this Deck Disabled(y/n): ")
 		reader := bufio.NewReader(os.Stdin)
 		sdis, _ := reader.ReadString('\n')
-		sdis = strings.TrimSuffix(sdis, "\r\n")
+		//sdis = strings.TrimSuffix(strings.TrimSuffix(sdis, "\r"), "\n")
+		sdis = strings.TrimSpace(sdis)
 		if sdis == "y" {
 			deck.Disable = 0
 		} else {
@@ -1020,7 +1082,8 @@ func validatedeck(deck string) (deckname string) {
 		fmt.Println("Deck Does Not Exist")
 		fmt.Println("Deck Name: ")
 		deck, _ := reader.ReadString('\n')
-		deck = strings.TrimSuffix(deck, "\r\n")
+		//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
+		deck = strings.TrimSpace(deck)
 		results := db.QueryRow("SELECT name FROM mtga.decks WHERE name=?", deck)
 		err = results.Scan(&deckname)
 	}
@@ -1035,7 +1098,8 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("What Level Was the Game?(Bronze, Silver, Gold, Platinum, Diamond, and Mythic)")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
+			//s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			s = strings.TrimSpace(s)
 		}
 	case "tier":
 		re, _ := regexp.Compile(`[1-4]`)
@@ -1043,7 +1107,8 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("What Tier Was the Game?(1-4)")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
+			//s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			s = strings.TrimSpace(s)
 		}
 	case "results":
 		re, _ := regexp.Compile(`won|lost`)
@@ -1051,7 +1116,8 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("Results(won/lost): ")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
+			//s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			s = strings.TrimSpace(s)
 		}
 	case "deck":
 		s = validatedeck(s)
@@ -1061,7 +1127,8 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("Enter or Import Deck: ")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
+			//s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			s = strings.TrimSpace(s)
 		}
 	case "edit":
 		re, _ := regexp.Compile(`edit|Edit|delete|Delete|view|View`)
@@ -1069,7 +1136,7 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("Edit or Delete Deck: ")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
+			s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
 		}
 	case "confirm":
 		re, _ := regexp.Compile(`[yn]`)
@@ -1077,7 +1144,8 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("Confirm(y/n): ")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
+			//s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			s = strings.TrimSpace(s)
 		}
 	case "colors":
 		re, _ := regexp.Compile(`Black|White|Blue|Red|Green|Colorless`)
@@ -1085,24 +1153,7 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("What Color?(Black|White|Blue|Red|Green)")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
-		}
-		/* 	case "percent":
-		re, _ := regexp.Compile(`wins|loses`)
-		for !re.MatchString(s) {
-			fmt.Println("Invalid Entry")
-			fmt.Println("Wins or Loses Percentages?")
-			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
-		} */
-	case "gametype":
-		re, _ := regexp.Compile(`p|b|sr|tsp|tsr|thr|hr|hb|Bot|e`)
-		for !re.MatchString(s) {
-			fmt.Println("Invalid Entry")
-			fmt.Println("Play(p), Brawl(b), Standard Ranked(sr), Traditional Standard Play(tsp), Traditional Standard Ranked(tsr),")
-			fmt.Println("Traditional Historic Ranked(thr), Historic Ranked(hr), Historic Brawl(hb), Bot")
-			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(s, "\r\n")
+			s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
 		}
 	}
 	ret = s
@@ -1170,49 +1221,6 @@ func pctvals(d string) {
 		fmt.Println("")
 		menu()
 	}
-
-	/* 	if s == "wins" {
-	   		results := db.QueryRow("SELECT deck,win_pct,win_count,games FROM mtga.win_percentage WHERE deck =?", d)
-	   		err := results.Scan(&deckname, &pct, &count, &games)
-	   		if err != nil {
-	   			if strings.Contains(err.Error(), "no rows in result set") {
-	   				fmt.Println("No Games Recored for this Deck")
-	   				fmt.Println("")
-	   				menu()
-	   			} else {
-	   				panic(err.Error())
-	   			}
-	   		}
-	   		fpct := fmt.Sprintf("%f", pct)
-	   		fpct = fpct[2:4]
-	   		if pct == 1 {
-	   			fpct = "100"
-	   		}
-	   		finalprint := fmt.Sprint(deckname + "   Win Percentage: " + fpct + "%    Number of Wins: " + strconv.Itoa(count) +
-	   			"    Number of Games: " + strconv.Itoa(games))
-	   		log.Println(finalprint)
-	   		fmt.Println("")
-	   		menu()
-	   	} else if s == "loses" {
-	   		results := db.QueryRow("SELECT deck,lose_pct,lose_count,games FROM mtga.lose_percentage WHERE deck =?", d)
-	   		err := results.Scan(&deckname, &pct, &count, &games)
-	   		if err != nil {
-	   			if strings.Contains(err.Error(), "no rows in result set") {
-	   				fmt.Println("No Games Recored for this Deck")
-	   				fmt.Println("")
-	   				menu()
-	   			} else {
-	   				panic(err.Error())
-	   			}
-	   		}
-	   		fpct := fmt.Sprintf("%f", pct)
-	   		fpct = fpct[2:4]
-	   		finalprint := fmt.Sprint(deckname + "   Lose Percentage: " + fpct + "%    Number of Loses: " + strconv.Itoa(count) +
-	   			"    Number of Games: " + strconv.Itoa(games))
-	   		log.Println(finalprint)
-	   		fmt.Println("")
-	   		menu()
-	   	} */
 	menu()
 }
 func streaks(d string) {
@@ -1254,6 +1262,9 @@ func streaks(d string) {
 			} else if streak == 1 {
 				streak = 0
 				cur++
+				if cur > max {
+					max = cur
+				}
 			}
 		} else if result == 1 {
 			streak = 1
@@ -1383,7 +1394,6 @@ func importdeck(d Deck, s string) {
 		side string
 	)
 
-	// optionally, resize scanner's capacity for lines over 64K, see next example
 	for scanner.Scan() {
 		var (
 			deck     string
@@ -1395,7 +1405,6 @@ func importdeck(d Deck, s string) {
 			num      int
 		)
 		deck = d.Name
-		//fmt.Println(d + " " + scanner.Text())
 		line := scanner.Text()
 
 		if line != "Deck" && line != "Sideboard" {
@@ -1484,6 +1493,7 @@ func importdeck(d Deck, s string) {
 
 	d.Date_Entered = time.Now()
 	d.Disable = 1
+
 	if s == "n" {
 		newdeck(d)
 	} else if s == "y" {
