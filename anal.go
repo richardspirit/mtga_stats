@@ -563,7 +563,7 @@ func analday(d string, win_lose string) {
 		println("")
 		gamebydaymenu()
 	} else if d == "n" && win_lose == "win" {
-		results, err := db.Query("SELECT deck, win_count, day_of_week  FROM mtga.most_wbd")
+		results, err := db.Query("SELECT deck, win_count, day_of_week  FROM mtga.most_wbd ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), win_count desc;")
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
@@ -601,7 +601,7 @@ func analday(d string, win_lose string) {
 		println("")
 		gamebydaymenu()
 	} else if d == "n" && win_lose == "lose" {
-		results, err := db.Query("SELECT deck, lose_count, day_of_week FROM mtga.most_lbd")
+		results, err := db.Query("SELECT deck, lose_count, day_of_week FROM mtga.most_lbd ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), lose_count desc")
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
@@ -706,7 +706,7 @@ func analweekday(d string, day string, wl string) {
 		println("")
 		analdmenu(day)
 	} else if wl == "w" && d == "all" {
-		results, err := db.Query("SELECT deck, win_count FROM mtga.wins_by_day WHERE day_of_week =?", day)
+		results, err := db.Query("SELECT deck, win_count FROM mtga.wins_by_day WHERE day_of_week =? ORDER BY win_count", day)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
 				fmt.Println("No Wins Recored for this Day")
@@ -733,7 +733,7 @@ func analweekday(d string, day string, wl string) {
 		println("")
 		analdmenu(day)
 	} else if wl == "l" && d == "all" {
-		results, err := db.Query("SELECT deck, lose_count FROM mtga.loses_by_day WHERE day_of_week =?", day)
+		results, err := db.Query("SELECT deck, lose_count FROM mtga.loses_by_day WHERE day_of_week =? ORDER BY lose_count", day)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
 				fmt.Println("No Loses Recored for this Day")
