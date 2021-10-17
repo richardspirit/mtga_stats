@@ -227,13 +227,13 @@ func menu() {
 			icards := new(int)
 			*icards, _ = strconv.Atoi(numcards)
 			fmt.Print("Total number of cards: " + numcards + "\n")
-			fmt.Println("Total number of instant/sorcery/enchantment: ")
+			fmt.Println("Total number of instant/sorcery: ")
 			numspells, _ := reader.ReadString('\n')
 			//numspells = strings.TrimSuffix(strings.TrimSuffix(numspells, "\r"), "\n")
 			numspells = strings.TrimSpace(numspells)
 			ispells := new(int)
 			*ispells, _ = strconv.Atoi(numspells)
-			fmt.Print("Total number of instant/sorcery/enchantment: " + numspells + "\n")
+			fmt.Print("Total number of instant/sorcery: " + numspells + "\n")
 			fmt.Println("Total number of creatures: ")
 			numcreatures, _ := reader.ReadString('\n')
 			//numcreatures = strings.TrimSuffix(strings.TrimSuffix(numcreatures, "\r"), "\n")
@@ -248,6 +248,20 @@ func menu() {
 			ilands := new(int)
 			*ilands, _ = strconv.Atoi((numlands))
 			fmt.Print("Total number of lands: " + numlands + "\n")
+			fmt.Println("Total number of enchantments: ")
+			numench, _ := reader.ReadString('\n')
+			//numlands = strings.TrimSuffix(strings.TrimSuffix(numlands, "\r"), "\n")
+			numench = strings.TrimSpace(numench)
+			iench := new(int)
+			*iench, _ = strconv.Atoi((numench))
+			fmt.Print("Total number of lands: " + numench + "\n")
+			fmt.Println("Total number of lands: ")
+			numarts, _ := reader.ReadString('\n')
+			//numlands = strings.TrimSuffix(strings.TrimSuffix(numlands, "\r"), "\n")
+			numarts = strings.TrimSpace(numarts)
+			iarts := new(int)
+			*iarts, _ = strconv.Atoi((numarts))
+			fmt.Print("Total number of lands: " + numarts + "\n")
 			//enter into database
 			//newdeck(name, color, favorite)
 			d := Deck{
@@ -259,6 +273,8 @@ func menu() {
 				Num_Lands:    int(*ilands),
 				Num_Spells:   int(*ispells),
 				Num_Creat:    int(*icreatures),
+				Num_Enchant:  int(*iench),
+				Num_Art:      int(*iarts),
 			}
 			err := newdeck(d)
 			if err != nil {
@@ -346,19 +362,36 @@ func menu() {
 			drank("n")
 		}
 	case 4:
-		fmt.Println("Would you like to narrow your search?(y/n)")
-		deckchoice, _ := reader.ReadString('\n')
-		//deckchoice = strings.TrimSuffix(strings.TrimSuffix(deckchoice, "\r"), "\n")
-		deckchoice = strings.TrimSpace(deckchoice)
-		validateuserinput(deckchoice, "confirm")
-		if deckchoice == "y" {
+		m := make(map[string]string)
+		reader := bufio.NewReader(os.Stdin)
+
+		// Set key/value pairs using typical `name[key] = val`
+		m["k1"] = fmt.Sprintf("%-25s", "All Decks")
+		m["k2"] = fmt.Sprintf("%0s", "Specify Deck")
+		m["k3"] = fmt.Sprintf("%-25s", "Most Games")
+		m["k4"] = fmt.Sprintf("%0s", "Least Games")
+
+		// print menu options
+		fmt.Println(" 1:", m["k1"]+" 2:", m["k2"])
+		fmt.Println(" 3:", m["k3"]+" 4:", m["k4"])
+
+		in := bufio.NewScanner(os.Stdin)
+		in.Scan()
+		choice, _ := strconv.Atoi(in.Text())
+
+		switch choice {
+		case 1:
+			gamecount("all")
+		case 2:
 			fmt.Println("Deck Name: ")
 			deckname, _ := reader.ReadString('\n')
 			//deckname = strings.TrimSuffix(strings.TrimSuffix(deckname, "\r"), "\n")
 			deckname = strings.TrimSpace(deckname)
 			gamecount(deckname)
-		} else {
-			gamecount("n")
+		case 3:
+			gamecount("high")
+		case 4:
+			gamecount("low")
 		}
 	case 5:
 		viewdecks("n", 0)
@@ -369,12 +402,13 @@ func menu() {
 		edchoice, _ := reader.ReadString('\n')
 		edchoice = strings.TrimSuffix(strings.TrimSuffix(edchoice, "\r"), "\n")
 		edchoice = strings.TrimSpace(edchoice)
+		//validate user input
+		edchoice = validateuserinput(edchoice, "edit")
 		fmt.Println("Deck:")
 		deck, _ := reader.ReadString('\n')
 		//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
 		deck = strings.TrimSpace(deck)
-		//validate user input
-		validateuserinput(edchoice, "edit")
+
 		if edchoice == "delete" || edchoice == "Delete" {
 			fmt.Println("Delete Deck: " + deck)
 			viewdecks(deck, 1)
@@ -397,20 +431,36 @@ func menu() {
 			viewdecks(deck, 0)
 		}
 	case 8:
-		fmt.Println("Specify Deck(y/n)")
-		choice, _ := reader.ReadString('\n')
-		//choice = strings.TrimSuffix(strings.TrimSuffix(choice, "\r"), "\n")
-		choice = strings.TrimSpace(choice)
-		choice = validateuserinput(choice, "confirm")
-		if choice == "y" {
-			fmt.Println("Deck: ")
-			deck, _ := reader.ReadString('\n')
-			//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
-			deck = strings.TrimSpace(deck)
-			deck = validatedeck(deck)
-			pctvals(deck)
-		} else {
-			pctvals("n")
+		m := make(map[string]string)
+		reader := bufio.NewReader(os.Stdin)
+
+		// Set key/value pairs using typical `name[key] = val`
+		m["k1"] = fmt.Sprintf("%-25s", "All Decks")
+		m["k2"] = fmt.Sprintf("%0s", "Specify Deck")
+		m["k3"] = fmt.Sprintf("%-25s", "Highest Percentage")
+		m["k4"] = fmt.Sprintf("%0s", "Lowest Percentage")
+
+		// print menu options
+		fmt.Println(" 1:", m["k1"]+" 2:", m["k2"])
+		fmt.Println(" 3:", m["k3"]+" 4:", m["k4"])
+
+		in := bufio.NewScanner(os.Stdin)
+		in.Scan()
+		choice, _ := strconv.Atoi(in.Text())
+
+		switch choice {
+		case 1:
+			pctvals("all")
+		case 2:
+			fmt.Println("Deck Name: ")
+			deckname, _ := reader.ReadString('\n')
+			//deckname = strings.TrimSuffix(strings.TrimSuffix(deckname, "\r"), "\n")
+			deckname = strings.TrimSpace(deckname)
+			pctvals(deckname)
+		case 3:
+			pctvals("high")
+		case 4:
+			pctvals("low")
 		}
 	case 9:
 		anal_menu()
@@ -533,7 +583,7 @@ func newdeck(d Deck) error {
 	defer db.Close()
 	d.Name = strings.TrimSpace(d.Name)
 	// perform a db.Query insert
-	query := "INSERT INTO mtga.decks(name, colors, favorite, numcards, numlands, numspells, numcreatures) VALUES (?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO mtga.decks(name, colors, favorite, numcards, numlands, numspells, numcreatures, numenchant, numartifacts) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
 	stmt, err := db.PrepareContext(ctx, query)
@@ -542,7 +592,7 @@ func newdeck(d Deck) error {
 		panic(err.Error())
 	}
 	defer stmt.Close()
-	res, err := stmt.ExecContext(ctx, d.Name, d.Colors, d.Favorite, d.Num_Cards, d.Num_Lands, d.Num_Spells, d.Num_Creat)
+	res, err := stmt.ExecContext(ctx, d.Name, d.Colors, d.Favorite, d.Num_Cards, d.Num_Lands, d.Num_Spells, d.Num_Creat, d.Num_Enchant, d.Num_Art)
 	if err != nil {
 		log.Printf("Error %s when inserting row into deck table", err)
 		panic(err.Error())
@@ -669,21 +719,8 @@ func gamecount(d string) {
 		deckname string
 		count    int
 	)
-	if d != "n" {
-		//validate deck name
-		d = validatedeck(d)
-
-		results := db.QueryRow("SELECT deck, results AS Count FROM mtga.game_count WHERE deck=?", d)
-		err := results.Scan(&deckname, &count)
-
-		if err != nil {
-			panic(err.Error())
-		}
-		finalcount := fmt.Sprint(deckname + " Game Count: " + strconv.Itoa(count))
-		log.Println(finalcount)
-		fmt.Println("")
-		menu()
-	} else {
+	switch d {
+	case "all":
 		results, err := db.Query("SELECT deck, results AS Count FROM mtga.game_count")
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
@@ -700,6 +737,66 @@ func gamecount(d string) {
 			finalcount := fmt.Sprint(fdeck + " Game Count: " + strconv.Itoa(count))
 			log.Println(finalcount)
 		}
+		fmt.Println("")
+		menu()
+	case "high":
+		hresult := db.QueryRow("select max(results) from mtga.game_count")
+		err := hresult.Scan(&count)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		results, err := db.Query("SELECT deck, results AS Count FROM mtga.game_count WHERE results =?", count)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		for results.Next() {
+			err = results.Scan(&deckname, &count)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			fdeck := fmt.Sprintf("%-30s", deckname)
+			finalcount := fmt.Sprint(fdeck + " Game Count: " + strconv.Itoa(count))
+			log.Println(finalcount)
+		}
+		fmt.Println("")
+		menu()
+	case "low":
+		lresult := db.QueryRow("SELECT MIN(results) FROM mtga.game_count")
+		err := lresult.Scan(&count)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		results, err := db.Query("SELECT deck, results AS Count FROM mtga.game_count WHERE results =?", count)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		for results.Next() {
+			err = results.Scan(&deckname, &count)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			fdeck := fmt.Sprintf("%-30s", deckname)
+			finalcount := fmt.Sprint(fdeck + " Game Count: " + strconv.Itoa(count))
+			log.Println(finalcount)
+		}
+		fmt.Println("")
+		menu()
+	default:
+		d = validatedeck(d)
+
+		results := db.QueryRow("SELECT deck, results AS Count FROM mtga.game_count WHERE deck=?", d)
+		err := results.Scan(&deckname, &count)
+
+		if err != nil {
+			//panic(err.Error())
+			println("No Games Recorded for this deck.")
+		}
+		finalcount := fmt.Sprint(deckname + " Game Count: " + strconv.Itoa(count))
+		log.Println(finalcount)
 		fmt.Println("")
 		menu()
 	}
@@ -800,12 +897,9 @@ func viewdecks(DeckName string, edit int) (ret string) {
 func topten() {
 	// Open up our database connection.
 	db := opendb()
-	// defer the close till after the main function has finished
-	// executing
 	defer db.Close()
 
 	results, err := db.Query("SELECT deck, ranking, wins, loses FROM mtga.topten")
-
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
@@ -1064,6 +1158,27 @@ func deletedeck(deck string) {
 		panic(err.Error())
 	}
 	fmt.Printf("%d deck deleted\n", rows)
+	//delete cards related to deck
+	query = "DELETE FROM mtga.cards WHERE deck=?"
+	ctx, cancelfunc = context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+	stmt, err = db.PrepareContext(ctx, query)
+	if err != nil {
+		fmt.Printf("Error %s when preparing SQL statement", err)
+		panic(err.Error())
+	}
+	defer stmt.Close()
+	res, err = stmt.ExecContext(ctx, deck)
+	if err != nil {
+		log.Printf("Error %s when deleting row from card table", err)
+		panic(err.Error())
+	}
+	rows, err = res.RowsAffected()
+	if err != nil {
+		log.Printf("Error %s when finding rows affected", err)
+		panic(err.Error())
+	}
+	fmt.Printf("%d cards deleted\n", rows)
 	fmt.Println("")
 	menu()
 }
@@ -1134,9 +1249,10 @@ func validateuserinput(s string, u string) (ret string) {
 		re, _ := regexp.Compile(`edit|Edit|delete|Delete|view|View`)
 		for !re.MatchString(s) || len(s) > 6 {
 			fmt.Println("Invalid Entry. Try Again")
-			fmt.Println("Edit or Delete Deck: ")
+			fmt.Println("View/Edit/Delete Deck: ")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			//s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			s = strings.TrimSpace(s)
 		}
 	case "confirm":
 		re, _ := regexp.Compile(`[yn]`)
@@ -1153,7 +1269,8 @@ func validateuserinput(s string, u string) (ret string) {
 			fmt.Println("Invalid Entry. Try Again")
 			fmt.Println("What Color?(Black|White|Blue|Red|Green)")
 			s, _ = reader.ReadString('\n')
-			s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			//s = strings.TrimSuffix(strings.TrimSuffix(s, "\r"), "\n")
+			s = strings.TrimSpace(s)
 		}
 	}
 	ret = s
@@ -1169,44 +1286,20 @@ func pctvals(d string) {
 		count    int
 		games    int
 	)
-	if d != "n" {
-		results := db.QueryRow("SELECT deck,win_pct,win_count,games FROM mtga.win_percentage WHERE deck =?", d)
-		err := results.Scan(&deckname, &pct, &count, &games)
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				menu()
-			} else {
-				panic(err.Error())
-			}
-		}
-		fpct := fmt.Sprintf("%f", pct)
-		fpct = fpct[2:4]
-		if pct == 1 {
-			fpct = "100"
-		}
-		finalprint := fmt.Sprint(deckname + "   Win Percentage: " + fpct + "%    Number of Wins: " + strconv.Itoa(count) +
-			"    Number of Games: " + strconv.Itoa(games))
-		log.Println(finalprint)
-		fmt.Println("")
-		menu()
-	} else {
+	switch d {
+	case "all":
 		results, err := db.Query("SELECT deck,win_pct,win_count,games FROM mtga.win_percentage")
 		if err != nil {
-			if strings.Contains(err.Error(), "no rows in result set") {
-				fmt.Println("No Games Recored for this Deck")
-				fmt.Println("")
-				menu()
-			} else {
-				panic(err.Error())
-			}
+			panic(err.Error()) // proper error handling instead of panic in your app
 		}
+
 		for results.Next() {
 			err = results.Scan(&deckname, &pct, &count, &games)
 			if err != nil {
 				panic(err.Error()) // proper error handling instead of panic in your app
 			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
 			fpct := fmt.Sprintf("%f", pct)
 			fdeck := fmt.Sprintf("%-25s", deckname)
 			fwins := fmt.Sprintf("%-2s", strconv.Itoa(count))
@@ -1220,8 +1313,80 @@ func pctvals(d string) {
 		}
 		fmt.Println("")
 		menu()
+	case "high":
+		results, err := db.Query("WITH mpct AS (SELECT MAX(win_pct) AS top_win FROM mtga.win_percentage) SELECT deck,win_pct,win_count,games FROM mtga.win_percentage, mpct WHERE win_pct = top_win")
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		for results.Next() {
+			err = results.Scan(&deckname, &pct, &count, &games)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			fpct := fmt.Sprintf("%f", pct)
+			fdeck := fmt.Sprintf("%-25s", deckname)
+			fwins := fmt.Sprintf("%-2s", strconv.Itoa(count))
+			fpct = fpct[2:4]
+			if pct == 1 {
+				fpct = "100"
+			}
+			finalprint := fmt.Sprint(fdeck + "   Win Percentage: " + fpct + "%    Number of Wins: " + fwins +
+				"    Number of Games: " + strconv.Itoa(games))
+			log.Println(finalprint)
+		}
+		fmt.Println("")
+		menu()
+	case "low":
+		results, err := db.Query("WITH mpct AS (SELECT MIN(win_pct) AS top_win FROM mtga.win_percentage) SELECT deck,win_pct,win_count,games FROM mtga.win_percentage, mpct WHERE win_pct = top_win")
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		for results.Next() {
+			err = results.Scan(&deckname, &pct, &count, &games)
+			if err != nil {
+				panic(err.Error()) // proper error handling instead of panic in your app
+			}
+			// and then print out the tag's Name attribute
+			log.SetFlags(0)
+			fpct := fmt.Sprintf("%f", pct)
+			fdeck := fmt.Sprintf("%-25s", deckname)
+			fwins := fmt.Sprintf("%-2s", strconv.Itoa(count))
+			fpct = fpct[2:4]
+			if pct == 1 {
+				fpct = "100"
+			}
+			finalprint := fmt.Sprint(fdeck + "   Win Percentage: " + fpct + "%    Number of Wins: " + fwins +
+				"    Number of Games: " + strconv.Itoa(games))
+			log.Println(finalprint)
+		}
+		fmt.Println("")
+		menu()
+	default:
+		d = validatedeck(d)
+
+		results := db.QueryRow("SELECT deck,win_pct,win_count,games FROM mtga.win_percentage WHERE deck=?", d)
+		err := results.Scan(&deckname, &pct, &count, &games)
+
+		if err != nil {
+			//panic(err.Error())
+			println("No Games Recorded for this deck.")
+		}
+		log.SetFlags(0)
+		fpct := fmt.Sprintf("%f", pct)
+		fdeck := fmt.Sprintf("%-25s", deckname)
+		fwins := fmt.Sprintf("%-2s", strconv.Itoa(count))
+		fpct = fpct[2:4]
+		if pct == 1 {
+			fpct = "100"
+		}
+		finalprint := fmt.Sprint(fdeck + "   Win Percentage: " + fpct + "%    Number of Wins: " + fwins +
+			"    Number of Games: " + strconv.Itoa(games))
+		log.Println(finalprint)
+		fmt.Println("")
+		menu()
 	}
-	menu()
 }
 func streaks(d string) {
 	// Open up our database connection.
