@@ -96,9 +96,17 @@ create or replace
 algorithm = UNDEFINED view `mtga`.`game_count` as
 select
     count(`g`.`results`) as `results`,
-    `g`.`deck` as `deck`
+    `g`.`deck` as `deck`,
+    case
+        when `d`.`name` is null
+        and `dd`.`name` is not null then 1
+    end as `deleted`
 from
-    `mtga`.`games` `g`
+    ((`mtga`.`games` `g`
+left join `mtga`.`decks_deleted` `dd` on
+    (`g`.`deck` = `dd`.`name`))
+left join `mtga`.`decks` `d` on
+    (`g`.`deck` = `d`.`name`))
 group by
     `g`.`deck`;
 
@@ -109,9 +117,17 @@ algorithm = UNDEFINED view `mtga`.`record` as
 select
     count(case when `g`.`results` = 0 then 1 end) as `wins`,
     count(case when `g`.`results` = 1 then 1 end) as `loses`,
-    `g`.`deck` as `deck`
+    `g`.`deck` as `deck`,
+    case
+        when `d`.`name` is null
+        and `dd`.`name` is not null then 1
+    end as `deleted`
 from
-    `mtga`.`games` `g`
+    ((`mtga`.`games` `g`
+left join `mtga`.`decks_deleted` `dd` on
+    (`g`.`deck` = `dd`.`name`))
+left join `mtga`.`decks` `d` on
+    (`g`.`deck` = `d`.`name`))
 group by
     `g`.`deck`;
 	
@@ -255,3 +271,39 @@ from
     `added_row_number`
 where
     `added_row_number`.`row_number` = 1;
+
+-- mtga.decks_all source
+
+create or replace
+algorithm = UNDEFINED view `mtga`.`decks_all` as
+select
+    `d`.`name` as `name`,
+    `d`.`colors` as `colors`,
+    `d`.`date_entered` as `date_entered`,
+    `d`.`favorite` as `favorite`,
+    `d`.`max_streak` as `max_streak`,
+    `d`.`cur_streak` as `cur_streak`,
+    `d`.`numcards` as `numcards`,
+    `d`.`numlands` as `numlands`,
+    `d`.`numspells` as `numspells`,
+    `d`.`numcreatures` as `numcreatures`,
+    `d`.`numenchant` as `numenchant`,
+    `d`.`numartifacts` as `numartifacts`
+from
+    `mtga`.`decks` `d`
+union all
+select
+    `dd`.`name` as `name`,
+    `dd`.`colors` as `colors`,
+    `dd`.`date_entered` as `date_entered`,
+    `dd`.`favorite` as `favorite`,
+    `dd`.`max_streak` as `max_streak`,
+    `dd`.`cur_streak` as `cur_streak`,
+    `dd`.`numcards` as `numcards`,
+    `dd`.`numlands` as `numlands`,
+    `dd`.`numspells` as `numspells`,
+    `dd`.`numcreatures` as `numcreatures`,
+    `dd`.`numenchant` as `numenchant`,
+    `dd`.`numartifacts` as `numartifacts`
+from
+    `mtga`.`decks_deleted` `dd`;

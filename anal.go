@@ -94,25 +94,26 @@ func analdmenu(day string) {
 
 	switch choice {
 	case 1:
-		analweekday("best", day, "")
+		wkdychoice := historic()
+		analweekday("best", day, "", wkdychoice)
 	case 2:
-		analweekday("worst", day, "")
+		analweekday("worst", day, "", "")
 	case 3:
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck)
-		analweekday(deck, day, "w")
+		deck = validatedeck(deck, "n")
+		analweekday(deck, day, "w", "")
 	case 4:
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck)
-		analweekday(deck, day, "l")
+		deck = validatedeck(deck, "n")
+		analweekday(deck, day, "l", "")
 	case 5:
-		analweekday("all", day, "w")
+		analweekday("all", day, "w", "")
 	case 6:
-		analweekday("all", day, "l")
+		analweekday("all", day, "l", "")
 	case 10:
 		gamebydaymenu()
 	case 11:
@@ -165,7 +166,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck)
+			deck = validatedeck(deck, "n")
 		}
 		analreason("mana", "w", deck)
 	case 2:
@@ -177,7 +178,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck)
+			deck = validatedeck(deck, "n")
 		}
 		analreason("creature", "w", deck)
 	case 3:
@@ -187,7 +188,7 @@ func analreasonmenu() {
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck)
+		deck = validatedeck(deck, "n")
 		analreason("", "w", deck)
 	case 5:
 		println("Do you want to specify a deck?(y/n)")
@@ -198,7 +199,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck)
+			deck = validatedeck(deck, "n")
 		}
 		analreason("mana", "l", deck)
 	case 6:
@@ -210,7 +211,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck)
+			deck = validatedeck(deck, "n")
 		}
 		analreason("creature", "l", deck)
 	case 7:
@@ -220,7 +221,7 @@ func analreasonmenu() {
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck)
+		deck = validatedeck(deck, "n")
 		analreason("", "l", deck)
 	case 9:
 		println("Do you want to specify a deck?(y/n)")
@@ -231,7 +232,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck)
+			deck = validatedeck(deck, "n")
 		}
 		println("Custom Filter Keyword:")
 		in.Scan()
@@ -415,6 +416,7 @@ func gamebydaymenu() {
 	switch choice {
 	case 1:
 		println("Best Day")
+		gbdchoice := historic()
 		println("Would you like to specify a deck?(y/n)")
 		in.Scan()
 		deckchoice := in.Text()
@@ -423,13 +425,15 @@ func gamebydaymenu() {
 			println("Deck: ")
 			in.Scan()
 			deck := in.Text()
-			deck = validatedeck(deck)
-			analday(deck, "win")
+			deck = validatedeck(deck, gbdchoice)
+			println("Deck test: " + deck)
+			analday(deck, "win", gbdchoice)
 		} else if deckchoice == "n" {
-			analday("n", "win")
+			analday("n", "win", gbdchoice)
 		}
 	case 2:
 		println("Worst Day")
+		gbdchoice := historic()
 		println("Would you like to specify a deck?(y/n)")
 		in.Scan()
 		deckchoice := in.Text()
@@ -438,10 +442,10 @@ func gamebydaymenu() {
 			println("Deck: ")
 			in.Scan()
 			deck := in.Text()
-			deck = validatedeck(deck)
-			analday(deck, "lose")
+			deck = validatedeck(deck, gbdchoice)
+			analday(deck, "lose", gbdchoice)
 		} else if deckchoice == "n" {
-			analday("n", "lose")
+			analday("n", "lose", gbdchoice)
 		}
 	case 3:
 		println("Monday")
@@ -530,7 +534,7 @@ func deckbycardmenu(cardtype string) {
 		deckbycardmenu(cardtype)
 	}
 }
-func analday(d string, win_lose string) {
+func analday(d string, win_lose string, h string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
@@ -538,14 +542,30 @@ func analday(d string, win_lose string) {
 	defer db.Close()
 
 	var (
-		deckname string
-		max_win  int
-		max_lose int
-		day      string
+		deckname           string
+		max_win            int
+		max_lose           int
+		day                string
+		win_day_query      string
+		win_day_all_query  string
+		lose_day_query     string
+		lose_day_all_query string
 	)
 
+	if h == "y" {
+		win_day_query = "SELECT deck, MAX(win_count) as max_win, day_of_week FROM mtga.wins_by_day WHERE deck=? GROUP BY deck, day_of_week ORDER BY win_count DESC LIMIT 1"
+		win_day_all_query = "SELECT deck, win_count, day_of_week FROM mtga.most_wbd ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), win_count DESC;"
+		lose_day_query = "SELECT deck, MAX(lose_count) as max_loses, day_of_week FROM mtga.loses_by_day WHERE deck=? GROUP BY deck, day_of_week ORDER BY lose_count DESC LIMIT 1"
+		lose_day_all_query = "SELECT deck, lose_count, day_of_week FROM mtga.most_lbd ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), lose_count DESC"
+	} else {
+		win_day_query = "SELECT deck, MAX(win_count) as max_win, day_of_week FROM mtga.wins_by_day WHERE deck=? AND deck IN (SELECT name FROM mtga.decks) GROUP BY deck, day_of_week ORDER BY win_count DESC LIMIT 1"
+		win_day_all_query = "SELECT deck, win_count, day_of_week FROM mtga.most_wbd WHERE deck IN (SELECT name FROM mtga.decks) ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), win_count DESC;"
+		lose_day_query = "SELECT deck, MAX(lose_count) as max_loses, day_of_week FROM mtga.loses_by_day WHERE deck=? AND deck IN (SELECT name FROM mtga.decks) GROUP BY deck, day_of_week ORDER BY lose_count DESC LIMIT 1"
+		lose_day_all_query = "SELECT deck, lose_count, day_of_week FROM mtga.most_lbd WHERE deck IN (SELECT name FROM mtga.decks) ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), lose_count DESC"
+	}
+
 	if d != "n" && win_lose == "win" {
-		results := db.QueryRow("SELECT deck, MAX(win_count) as max_win, day_of_week FROM mtga.wins_by_day WHERE deck=? GROUP BY deck, day_of_week order by win_count desc limit 1", d)
+		results := db.QueryRow(win_day_query, d)
 		err := results.Scan(&deckname, &max_win, &day)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
@@ -563,7 +583,7 @@ func analday(d string, win_lose string) {
 		println("")
 		gamebydaymenu()
 	} else if d == "n" && win_lose == "win" {
-		results, err := db.Query("SELECT deck, win_count, day_of_week  FROM mtga.most_wbd ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), win_count desc;")
+		results, err := db.Query(win_day_all_query)
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
@@ -583,7 +603,7 @@ func analday(d string, win_lose string) {
 		}
 		gamebydaymenu()
 	} else if d != "n" && win_lose == "lose" {
-		results := db.QueryRow("SELECT deck, MAX(lose_count) as max_loses, day_of_week FROM mtga.loses_by_day WHERE deck=? group by deck, day_of_week order by lose_count desc limit 1", d)
+		results := db.QueryRow(lose_day_query, d)
 		err := results.Scan(&deckname, &max_lose, &day)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
@@ -601,7 +621,7 @@ func analday(d string, win_lose string) {
 		println("")
 		gamebydaymenu()
 	} else if d == "n" && win_lose == "lose" {
-		results, err := db.Query("SELECT deck, lose_count, day_of_week FROM mtga.most_lbd ORDER BY FIELD(day_of_week , 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'), lose_count desc")
+		results, err := db.Query(lose_day_all_query)
 		if err != nil {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
@@ -621,7 +641,7 @@ func analday(d string, win_lose string) {
 		gamebydaymenu()
 	}
 }
-func analweekday(d string, day string, wl string) {
+func analweekday(d string, day string, wl string, h string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
@@ -629,12 +649,17 @@ func analweekday(d string, day string, wl string) {
 	defer db.Close()
 
 	var (
-		deckname string
-		wl_count int
+		deckname  string
+		wl_count  int
+		wkdy_best string
 	)
 
+	if h == "y" {
+		wkdy_best = "SELECT deck, win_count FROM mtga.wins_by_day WHERE day_of_week =? ORDER BY win_count DESC LIMIT 1"
+	}
+
 	if d == "best" {
-		results := db.QueryRow("SELECT deck, win_count FROM mtga.wins_by_day WHERE day_of_week =? ORDER BY win_count DESC LIMIT 1", day)
+		results := db.QueryRow(wkdy_best, day)
 		err := results.Scan(&deckname, &wl_count)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
@@ -983,7 +1008,7 @@ func analtime(t string, wl string) {
 		println("Deck:")
 		in.Scan()
 		deckchoice := in.Text()
-		deckchoice = validatedeck(deckchoice)
+		deckchoice = validatedeck(deckchoice, "n")
 
 		results, err := db.Query("SELECT deck, cause, TIME(`Timestamp`) AS playtime FROM mtga.games WHERE (TIME(`Timestamp`) BETWEEN ? AND ?) AND results =? AND deck =?", s, e, iwl, deckchoice)
 
@@ -1081,7 +1106,7 @@ func analvltier(lvl string, tr string, wl string) {
 		println("Deck:")
 		in.Scan()
 		deckchoice := in.Text()
-		deckchoice = validatedeck(deckchoice)
+		deckchoice = validatedeck(deckchoice, "n")
 
 		results, err := db.Query("SELECT deck, opponent, `level`, cause FROM mtga.games WHERE results=? AND level LIKE CONCAT('%',?,'%',?,'%') AND deck =? ORDER BY deck ", iwl, lvl, tr, deckchoice)
 
