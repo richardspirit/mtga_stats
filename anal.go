@@ -276,7 +276,7 @@ func analtimemenu() {
 	m["k5"] = fmt.Sprintf("%0s", "Loses Between Midnight and 6am")
 	m["k6"] = fmt.Sprintf("%0s", "Loses Between 6am and Noon")
 	m["k7"] = fmt.Sprintf("%0s", "Loses Between Noon and 6pm")
-	m["k8"] = fmt.Sprintf("%24s", "Losese Between 6pm and Midnight")
+	m["k8"] = fmt.Sprintf("%24s", "Loses Between 6pm and Midnight")
 	m["k9"] = fmt.Sprintf("%0s", "Customized Start/End Time")
 	m["k10"] = fmt.Sprintf("%-50s", "Return to Previous Menu")
 	m["k11"] = fmt.Sprintf("%0s", "Return to Main Menu")
@@ -367,13 +367,15 @@ func analvltiermenu() {
 		in.Scan()
 		lvl := in.Text()
 		lvl = validateuserinput(lvl, "level")
-		analvltier(lvl, "", "w")
+		lvlchoice := historic()
+		analvltier(lvl, "", "w", lvlchoice)
 	case 2:
 		println("Level: ")
 		in.Scan()
 		lvl := in.Text()
 		lvl = validateuserinput(lvl, "level")
-		analvltier(lvl, "", "l")
+		lvlchoice := historic()
+		analvltier(lvl, "", "l", lvlchoice)
 	case 3:
 		println("Level: ")
 		in.Scan()
@@ -383,7 +385,8 @@ func analvltiermenu() {
 		in.Scan()
 		tier := in.Text()
 		tier = validateuserinput(tier, "tier")
-		analvltier(lvl, tier, "w")
+		lvlchoice := historic()
+		analvltier(lvl, tier, "w", lvlchoice)
 	case 4:
 		println("Level: ")
 		in.Scan()
@@ -393,7 +396,8 @@ func analvltiermenu() {
 		in.Scan()
 		tier := in.Text()
 		tier = validateuserinput(tier, "tier")
-		analvltier(lvl, tier, "l")
+		lvlchoice := historic()
+		analvltier(lvl, tier, "l", lvlchoice)
 	case 10:
 		anal_menu()
 	case 11:
@@ -538,13 +542,17 @@ func deckbycardmenu(cardtype string) {
 
 	switch choice {
 	case 1:
-		analdeckcard("wins", "", cardchoice)
+		adchoice := historic()
+		analdeckcard("wins", "", cardchoice, adchoice)
 	case 2:
-		analdeckcard("loses", "", cardchoice)
+		adchoice := historic()
+		analdeckcard("loses", "", cardchoice, adchoice)
 	case 3:
-		analdeckcard("wins", "all", cardchoice)
+		adchoice := historic()
+		analdeckcard("wins", "all", cardchoice, adchoice)
 	case 4:
-		analdeckcard("loses", "all", cardchoice)
+		adchoice := historic()
+		analdeckcard("loses", "all", cardchoice, adchoice)
 	case 10:
 		anal_menu()
 	case 11:
@@ -1097,18 +1105,19 @@ func analtime(t string, wl string, h string) {
 		analtimemenu()
 	}
 }
-func analvltier(lvl string, tr string, wl string) {
+func analvltier(lvl string, tr string, wl string, h string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
 	defer db.Close()
 
 	var (
-		deck  string
-		level string
-		iwl   int
-		opp   string
-		cause string
+		deck      string
+		level     string
+		iwl       int
+		opp       string
+		cause     string
+		lvl_query string
 	)
 
 	in := bufio.NewScanner(os.Stdin)
@@ -1123,9 +1132,14 @@ func analvltier(lvl string, tr string, wl string) {
 		iwl = 1
 	}
 
+	if h == "y" {
+		lvl_query = "SELECT deck, opponent, `level`, cause FROM mtga.games WHERE results=? AND level LIKE CONCAT('%',?,'%',?,'%') ORDER BY deck"
+	} else {
+		lvl_query = "SELECT deck, opponent, `level`, cause FROM mtga.games WHERE results=? AND level LIKE CONCAT('%',?,'%',?,'%') AND deck IN (SELECT name FROM mtga.decks) ORDER BY deck"
+	}
+
 	if confirmchoice == "n" {
-		results, err := db.Query("SELECT deck, opponent, `level`, cause FROM mtga.games WHERE results=? AND level LIKE CONCAT('%',?,'%',?,'%') ORDER BY deck",
-			iwl, lvl, tr)
+		results, err := db.Query(lvl_query, iwl, lvl, tr)
 		//err := results.Scan(&cause)
 		if err != nil {
 			if strings.Contains(err.Error(), "no rows in result set") {
@@ -1155,7 +1169,7 @@ func analvltier(lvl string, tr string, wl string) {
 		println("Deck:")
 		in.Scan()
 		deckchoice := in.Text()
-		deckchoice = validatedeck(deckchoice, "n")
+		deckchoice = validatedeck(deckchoice, h)
 
 		results, err := db.Query("SELECT deck, opponent, `level`, cause FROM mtga.games WHERE results=? AND level LIKE CONCAT('%',?,'%',?,'%') AND deck =? ORDER BY deck ", iwl, lvl, tr, deckchoice)
 
@@ -1199,11 +1213,11 @@ func recdelete() {
 		games        int
 	)
 
-	results, err := db.Query("SELECT name, date_entered, win_pct, win_count, games FROM mtga.decks d JOIN mtga.win_percentage wp ON d.name = wp.deck WHERE win_pct <= .20")
+	results, err := db.Query("SELECT name, date_entered, win_pct, win_count, games FROM mtga.decks d JOIN mtga.win_percentage wp ON d.name = wp.deck WHERE win_pct <= .40 ORDER BY games DESC, name")
 
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
-			fmt.Println("No Games Recored for this Deck")
+			fmt.Println("No Decks Recommended for Deleting")
 			fmt.Println("")
 			anal_menu()
 		} else {
@@ -1230,23 +1244,33 @@ func recdelete() {
 	println("")
 	anal_menu()
 }
-func analdeckcard(wl string, all string, card string) {
+func analdeckcard(wl string, all string, card string, h string) {
 	// Open up our database connection.
 	db := opendb()
 	// defer the close till after the main function has finished
 	defer db.Close()
 
 	var (
-		cardtype    int
-		winlose     int
-		finalstring string
-		stmt        string
+		cardtype      int
+		winlose       int
+		finalstring   string
+		stmt          string
+		crd_query     string
+		crd_all_query string
 	)
 
+	if h == "y" {
+		crd_query = "SELECT DISTINCT " + card + ", " + wl + " FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck GROUP BY " + card + ", " + wl + " ORDER BY " + wl + " DESC, " + card + " DESC LIMIT 10"
+		crd_all_query = "SELECT DISTINCT " + card + ", " + wl + " FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck ORDER BY " + wl + " DESC, " + card + " DESC"
+	} else {
+		crd_query = "SELECT DISTINCT " + card + ", " + wl + " FROM mtga.decks_all d JOIN mtga.record r ON d.name = r.deck GROUP BY " + card + ", " + wl + " ORDER BY " + wl + " DESC, " + card + " DESC LIMIT 10"
+		crd_all_query = "SELECT DISTINCT " + card + ", " + wl + " FROM mtga.decks_all d JOIN mtga.record r ON d.name = r.deck ORDER BY " + wl + " DESC, " + card + " DESC"
+	}
+
 	if all == "" {
-		stmt = "SELECT " + card + ", " + wl + " FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck GROUP BY " + card + ", " + wl + " ORDER BY " + wl + " DESC, " + card + " DESC LIMIT 10"
+		stmt = crd_query
 	} else if all == "all" {
-		stmt = "SELECT " + card + ", " + wl + " FROM mtga.decks d JOIN mtga.record r ON d.name = r.deck ORDER BY " + wl + " DESC, " + card + " DESC"
+		stmt = crd_all_query
 	}
 
 	results, err := db.Query(stmt)
