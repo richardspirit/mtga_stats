@@ -300,7 +300,7 @@ func menu() {
 		//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
 		deck = strings.TrimSpace(deck)
 		//validate deck name
-		deck = validatedeck(deck, "n")
+		deck = validatedeck(deck, "n", "")
 		fmt.Println("You " + results + " your game using " + deck)
 		fmt.Println("Opponent Name:?")
 		opp, _ := reader.ReadString('\n')
@@ -678,7 +678,7 @@ func drank(DeckName string, h string) error {
 
 	if DeckName != "n" {
 		DeckName = strings.TrimSuffix(strings.TrimSuffix(DeckName, "\r"), "\n")
-		DeckName = validatedeck(DeckName, h)
+		DeckName = validatedeck(DeckName, h, "")
 
 		// Execute the query
 		results := db.QueryRow(rkquery, DeckName)
@@ -825,7 +825,7 @@ func gamecount(d string, h string) {
 		fmt.Println("")
 		menu()
 	default:
-		d = validatedeck(d, h)
+		d = validatedeck(d, h, "")
 
 		results := db.QueryRow("SELECT deck, results AS Count FROM mtga.game_count WHERE deck=?", d)
 		err := results.Scan(&deckname, &count)
@@ -859,7 +859,7 @@ func viewdecks(DeckName string, edit int, h string) (ret string) {
 		var d Deck
 		DeckName = strings.TrimSuffix(strings.TrimSuffix(DeckName, "\r"), "\n")
 		//validate deck name
-		DeckName = validatedeck(DeckName, h)
+		DeckName = validatedeck(DeckName, h, "")
 		results := db.QueryRow(vquery, DeckName)
 		err := results.Scan(&d.Name, &d.Colors, &d.Date_Entered, &d.Favorite, &d.Max_Streak, &d.Cur_Streak,
 			&d.Num_Cards, &d.Num_Lands, &d.Num_Spells, &d.Num_Creat, &d.Num_Enchant, &d.Num_Art)
@@ -1225,7 +1225,7 @@ func deletedeck(deck string) {
 	fmt.Println("")
 	menu()
 }
-func validatedeck(deck string, h string) (deckname string) {
+func validatedeck(deck string, h string, newdeck string) (deckname string) {
 	// Open up our database connection.
 	db := opendb()
 	//include deleted decks
@@ -1240,17 +1240,22 @@ func validatedeck(deck string, h string) (deckname string) {
 	} else {
 		vdquery = "SELECT name FROM mtga.decks WHERE name=?"
 	}
-	//var deckname string
-	results := db.QueryRow(vdquery, deck)
-	err := results.Scan(&deckname)
-	for err != nil {
-		fmt.Println("Deck Does Not Exist")
-		fmt.Println("Deck Name: ")
-		deck, _ := reader.ReadString('\n')
-		//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
-		deck = strings.TrimSpace(deck)
+
+	if newdeck == "new" {
+
+	} else {
+		//var deckname string
 		results := db.QueryRow(vdquery, deck)
-		err = results.Scan(&deckname)
+		err := results.Scan(&deckname)
+		for err != nil {
+			fmt.Println("Deck Does Not Exist")
+			fmt.Println("Deck Name: ")
+			deck, _ := reader.ReadString('\n')
+			//deck = strings.TrimSuffix(strings.TrimSuffix(deck, "\r"), "\n")
+			deck = strings.TrimSpace(deck)
+			results := db.QueryRow(vdquery, deck)
+			err = results.Scan(&deckname)
+		}
 	}
 	return
 }
@@ -1285,7 +1290,7 @@ func validateuserinput(s string, u string) (ret string) {
 			s = strings.TrimSpace(s)
 		}
 	case "deck":
-		s = validatedeck(s, "n")
+		s = validatedeck(s, "n", "")
 	case "choice":
 		re, _ := regexp.Compile(`enter|Enter|import|Import`)
 		for !re.MatchString(s) || len(s) > 6 {
@@ -1427,7 +1432,7 @@ func pctvals(d string, h string) {
 		fmt.Println("")
 		menu()
 	default:
-		d = validatedeck(d, h)
+		d = validatedeck(d, h, "")
 
 		results := db.QueryRow("SELECT deck,win_pct,win_count,games FROM mtga.win_percentage WHERE deck=?", d)
 		err := results.Scan(&deckname, &pct, &count, &games)
