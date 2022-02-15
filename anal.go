@@ -104,14 +104,14 @@ func analdmenu(day string) {
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck, wkdychoice)
+		deck = validatedeck(deck, wkdychoice, "")
 		analweekday(deck, day, "w", wkdychoice)
 	case 4:
 		wkdychoice := historic()
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck, wkdychoice)
+		deck = validatedeck(deck, wkdychoice, "")
 		analweekday(deck, day, "l", wkdychoice)
 	case 5:
 		wkdychoice := historic()
@@ -172,7 +172,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck, rsnchoice)
+			deck = validatedeck(deck, rsnchoice, "")
 		}
 		analreason("mana", "w", deck, rsnchoice)
 	case 2:
@@ -185,7 +185,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck, rsnchoice)
+			deck = validatedeck(deck, rsnchoice, "")
 		}
 		analreason("creature", "w", deck, rsnchoice)
 	case 3:
@@ -196,7 +196,7 @@ func analreasonmenu() {
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck, rsnchoice)
+		deck = validatedeck(deck, rsnchoice, "")
 		analreason("", "w", deck, rsnchoice)
 	case 5:
 		println("Do you want to specify a deck?(y/n)")
@@ -208,7 +208,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck, rsnchoice)
+			deck = validatedeck(deck, rsnchoice, "")
 		}
 		analreason("mana", "l", deck, rsnchoice)
 	case 6:
@@ -221,7 +221,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck, rsnchoice)
+			deck = validatedeck(deck, rsnchoice, "")
 		}
 		analreason("creature", "l", deck, rsnchoice)
 	case 7:
@@ -232,7 +232,7 @@ func analreasonmenu() {
 		println("Deck:")
 		in.Scan()
 		deck := in.Text()
-		deck = validatedeck(deck, rsnchoice)
+		deck = validatedeck(deck, rsnchoice, "")
 		analreason("", "l", deck, rsnchoice)
 	case 9:
 		println("Do you want to specify a deck?(y/n)")
@@ -244,7 +244,7 @@ func analreasonmenu() {
 			println("Deck: ")
 			in.Scan()
 			deck = in.Text()
-			deck = validatedeck(deck, rsnchoice)
+			deck = validatedeck(deck, rsnchoice, "")
 		}
 		println("Custom Filter Keyword:")
 		in.Scan()
@@ -450,7 +450,7 @@ func gamebydaymenu() {
 			println("Deck: ")
 			in.Scan()
 			deck := in.Text()
-			deck = validatedeck(deck, gbdchoice)
+			deck = validatedeck(deck, gbdchoice, "")
 			println("Deck test: " + deck)
 			analday(deck, "win", gbdchoice)
 		} else if deckchoice == "n" {
@@ -467,7 +467,7 @@ func gamebydaymenu() {
 			println("Deck: ")
 			in.Scan()
 			deck := in.Text()
-			deck = validatedeck(deck, gbdchoice)
+			deck = validatedeck(deck, gbdchoice, "")
 			analday(deck, "lose", gbdchoice)
 		} else if deckchoice == "n" {
 			analday("n", "lose", gbdchoice)
@@ -1065,7 +1065,7 @@ func analtime(t string, wl string, h string) {
 		println("Deck:")
 		in.Scan()
 		deckchoice := in.Text()
-		deckchoice = validatedeck(deckchoice, h)
+		deckchoice = validatedeck(deckchoice, h, "")
 
 		results, err := db.Query("SELECT deck, cause, TIME(`Timestamp`) AS playtime FROM mtga.games WHERE (TIME(`Timestamp`) BETWEEN ? AND ?) AND results =? AND deck =?", s, e, iwl, deckchoice)
 
@@ -1169,7 +1169,7 @@ func analvltier(lvl string, tr string, wl string, h string) {
 		println("Deck:")
 		in.Scan()
 		deckchoice := in.Text()
-		deckchoice = validatedeck(deckchoice, h)
+		deckchoice = validatedeck(deckchoice, h, "")
 
 		results, err := db.Query("SELECT deck, opponent, `level`, cause FROM mtga.games WHERE results=? AND level LIKE CONCAT('%',?,'%',?,'%') AND deck =? ORDER BY deck ", iwl, lvl, tr, deckchoice)
 
